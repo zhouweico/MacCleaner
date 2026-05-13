@@ -105,11 +105,13 @@ function UninstallAppsList() {
   }
 
   async function handleSelectApp(app: AppInfo) {
-    setSelectedItem(app as unknown as SelectedItem);
     if (app.associatedFiles.length === 0 && app.bundleId) {
       const files = await scanAppAssociated(app.bundleId, app.name);
       const updated = apps.map(a => a.path === app.path ? { ...a, associatedFiles: files } : a);
       setApps(updated);
+      setSelectedItem({ ...app, associatedFiles: files } as unknown as SelectedItem);
+    } else {
+      setSelectedItem(app as unknown as SelectedItem);
     }
   }
 
