@@ -206,7 +206,7 @@ function Dashboard() {
       {/* Module cards */}
       {totalCleanable > 0 && (
         <div>
-          <h2 className="text-xs font-semibold text-macos-text-secondary mb-2">
+          <h2 className="text-xs font-semibold mb-2">
             可清理空间 · {formatBytes(totalCleanable)}
           </h2>
           <ModuleCards />
