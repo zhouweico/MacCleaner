@@ -6,7 +6,7 @@ import { useClean } from '@/hooks/useClean';
 import type { ScanItem } from '@/types';
 
 function BrewList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, toggleSelection } = useAppStore();
   const { doSafeClean } = useClean();
   const result = scanResults['brew'];
 
@@ -46,7 +46,7 @@ function BrewList() {
         {result.items.map((item, i) => (
           <div
             key={i}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${selectedItem?.path === item.path ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
+            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${(selectedItem?.path === item.path || isSelected(item.path)) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
             onClick={() => handleSelect(item)}
           >
             <input
