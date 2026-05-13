@@ -1,0 +1,33 @@
+{
+  "cache": [
+    { "path": ".npm", "name": "npm 包缓存", "description": "npm install 下载的包缓存" },
+    { "path": ".cache", "name": "跨平台应用缓存", "description": "XDG 标准缓存目录" },
+    { "path": ".cocoapods", "name": "CocoaPods 缓存", "description": "CocoaPods 下载的依赖" },
+    { "path": ".gem", "name": "Ruby gem 缓存", "description": "gem install 下载的包" }
+  ],
+  "config": [
+    { "path": ".claude", "name": "Claude Code", "tool": "claude", "description": "Claude Code 配置和会话" },
+    { "path": ".codex", "name": "Codex", "tool": "codex", "description": "Codex CLI 会话缓存" },
+    { "path": ".qwen", "name": "Qwen CLI", "tool": "qwen", "description": "Qwen CLI 配置" },
+    { "path": ".kube", "name": "Kubernetes", "tool": "kubectl", "description": "k8s 配置和上下文" },
+    { "path": ".docker", "name": "Docker", "tool": "docker", "description": "Docker CLI 配置" },
+    { "path": ".config", "name": "XDG 配置", "description": "XDG 标准配置目录" },
+    { "path": ".vim", "name": "Vim", "description": "Vim 配置和插件" },
+    { "path": ".oh-my-zsh", "name": "Oh My Zsh", "description": "Zsh 框架配置" }
+  ],
+  "data": [
+    { "path": ".orbstack", "name": "OrbStack", "tool": "orbstack", "description": "OrbStack 虚拟机数据" },
+    { "path": ".krew", "name": "Krew", "tool": "kubectl", "description": "kubectl 插件管理器" },
+    { "path": ".folo", "name": "Folo RSS", "tool": "folo", "description": "Folo RSS 阅读器数据" },
+    { "path": ".lark-cli", "name": "飞书 CLI", "tool": "lark", "description": "飞书 CLI 配置" },
+    { "path": ".local", "name": "XDG 本地数据", "description": "XDG 标准数据目录" },
+    { "path": ".nvm", "name": "NVM", "tool": "nvm", "description": "Node.js 版本管理" },
+    { "path": ".conda", "name": "Conda", "tool": "conda", "description": "Conda 环境和包" },
+    { "path": ".ipython", "name": "IPython", "tool": "python", "description": "IPython 配置和缓存" }
+  ],
+  "protected": [
+    { "path": ".ssh", "name": "SSH", "description": "SSH 密钥和 known_hosts，永远不可删除" },
+    { "path": ".gnupg", "name": "GnuPG", "description": "GPG 密钥，永远不可删除" },
+    { "path": ".Trash", "name": "废纸篓", "description": "需要通过清空废纸篓操作处理" }
+  ]
+}
