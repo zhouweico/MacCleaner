@@ -1,10 +1,39 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+
+function createTray() {
+  tray = new Tray(nativeImage.createEmpty());
+  tray.setToolTip('MacCleaner');
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '打开 MacCleaner',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      },
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => app.quit(),
+    },
+  ]);
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    }
+  });
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -22,6 +51,13 @@ function createWindow() {
     mainWindow?.show();
   });
 
+  mainWindow.on('close', (event) => {
+    if (process.platform === 'darwin') {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
@@ -30,7 +66,10 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createTray();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

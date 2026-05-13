@@ -1,7 +1,11 @@
+import Sidebar from '@/components/Sidebar';
+import ModuleView from '@/components/ModuleView';
+
 function App() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-gray-900 text-white">
-      <h1 className="text-2xl font-bold">MacCleaner</h1>
+    <div className="flex h-screen w-screen bg-gray-900 text-white">
+      <Sidebar />
+      <ModuleView />
     </div>
   );
 }
