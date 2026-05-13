@@ -3,6 +3,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { registerScanHandlers } from './ipc/scan';
 import { registerCleanHandlers } from './ipc/clean';
+import { registerUninstallHandlers } from './ipc/uninstall';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -73,6 +74,7 @@ app.whenReady().then(() => {
   createWindow();
   registerScanHandlers();
   registerCleanHandlers();
+  registerUninstallHandlers();
 });
 
 app.on('window-all-closed', () => {

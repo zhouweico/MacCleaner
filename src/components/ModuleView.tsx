@@ -7,6 +7,9 @@ import CondaModule from '@/modules/CondaModule';
 import SystemCacheModule from '@/modules/SystemCacheModule';
 import CliToolsModule from '@/modules/CliToolsModule';
 import DownloadsModule from '@/modules/DownloadsModule';
+import UninstallApps from '@/features/UninstallApps';
+import UninstallCli from '@/features/UninstallCli';
+import ResidualCleaner from '@/features/ResidualCleaner';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -28,9 +31,9 @@ function ModuleView() {
     'system-cache': <SystemCacheModule />,
     'cli-tools': <CliToolsModule />,
     downloads: <DownloadsModule />,
-    'uninstall-apps': <Placeholder name="已安装 APP" />,
-    'uninstall-cli': <Placeholder name="CLI 工具卸载" />,
-    'residual-clean': <Placeholder name="APP 残留清理" />,
+    'uninstall-apps': <UninstallApps />,
+    'uninstall-cli': <UninstallCli />,
+    'residual-clean': <ResidualCleaner />,
     settings: <Placeholder name="设置" />,
   };
 
