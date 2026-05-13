@@ -4,6 +4,9 @@ import BrewModule from '@/modules/BrewModule';
 import DockerModule from '@/modules/DockerModule';
 import NpmModule from '@/modules/NpmModule';
 import CondaModule from '@/modules/CondaModule';
+import SystemCacheModule from '@/modules/SystemCacheModule';
+import CliToolsModule from '@/modules/CliToolsModule';
+import DownloadsModule from '@/modules/DownloadsModule';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -22,9 +25,9 @@ function ModuleView() {
     docker: <DockerModule />,
     npm: <NpmModule />,
     conda: <CondaModule />,
-    'system-cache': <Placeholder name="系统缓存" />,
-    'cli-tools': <Placeholder name="CLI 工具" />,
-    downloads: <Placeholder name="Downloads" />,
+    'system-cache': <SystemCacheModule />,
+    'cli-tools': <CliToolsModule />,
+    downloads: <DownloadsModule />,
     'uninstall-apps': <Placeholder name="已安装 APP" />,
     'uninstall-cli': <Placeholder name="CLI 工具卸载" />,
     'residual-clean': <Placeholder name="APP 残留清理" />,
