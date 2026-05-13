@@ -13,7 +13,7 @@ async function moveToTrash(paths: string[]) {
 }
 
 function CliToolsList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, clearSelection, toggleSelection } = useAppStore();
   const result = scanResults['cli-tools'];
 
   useEffect(() => { handleScan(); }, []);
@@ -77,7 +77,7 @@ function CliToolsList() {
         {result.items.map((item, i) => (
           <div
             key={i}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${(selectedItem?.path === item.path || isSelected(item.path)) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
+            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${selectedItem?.path === item.path ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
             onClick={() => setSelectedItem(item as unknown as SelectedItem)}
           >
             <input
