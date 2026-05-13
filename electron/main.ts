@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { registerScanHandlers } from './ipc/scan';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -69,6 +70,7 @@ function createWindow() {
 app.whenReady().then(() => {
   createTray();
   createWindow();
+  registerScanHandlers();
 });
 
 app.on('window-all-closed', () => {
