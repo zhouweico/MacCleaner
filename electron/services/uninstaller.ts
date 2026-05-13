@@ -1,4 +1,5 @@
 import { execFileNoThrow } from '../utils/execFileNoThrow';
+import { extractAppIcon } from '../utils/extractAppIcon';
 import type { AppInfo, AssociatedFile, CleanResult } from '../types';
 import { readdir, stat } from 'fs/promises';
 import { join } from 'path';
@@ -30,6 +31,7 @@ export async function scanApps(): Promise<AppInfo[]> {
         path: appPath,
         bundleId,
         size: appStat.isDirectory() ? await getDirSize(appPath) : appStat.size,
+        iconData: await extractAppIcon(appPath),
         associatedFiles: [],
       });
     }

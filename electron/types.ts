@@ -45,7 +45,7 @@ export interface AppInfo {
   path: string;
   bundleId: string;
   size: number;
-  iconPath?: string;
+  iconData?: string;
   associatedFiles: AssociatedFile[];
 }
 

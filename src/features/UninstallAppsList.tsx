@@ -148,8 +148,12 @@ function UninstallAppsList() {
               onClick={(e) => e.stopPropagation()}
               className="rounded shrink-0"
             />
-            <div className="w-8 h-8 rounded bg-macos-surface flex items-center justify-center text-sm shrink-0">
-              📱
+            <div className="w-8 h-8 rounded bg-macos-surface flex items-center justify-center overflow-hidden shrink-0">
+              {app.iconData ? (
+                <img src={app.iconData} alt={app.name} className="w-8 h-8 object-contain" />
+              ) : (
+                <span className="text-sm">📱</span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium truncate">{app.name}</div>
@@ -218,8 +222,12 @@ export function UninstallAppsDetail() {
       <div className="border-b border-macos-separator px-4 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl shrink-0">
-              📱
+            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center overflow-hidden shrink-0">
+              {app.iconData ? (
+                <img src={app.iconData} alt={app.name} className="w-10 h-10 object-contain" />
+              ) : (
+                <span className="text-xl">📱</span>
+              )}
             </div>
             <div>
               <h2 className="text-lg font-bold">{app.name}</h2>
