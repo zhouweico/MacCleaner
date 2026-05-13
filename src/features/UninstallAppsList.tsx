@@ -87,7 +87,7 @@ function CollapsibleSection({ title, files, checkedFiles, onToggleFile, defaultE
 }
 
 function UninstallAppsList() {
-  const { apps, setApps, setScanning, setSelectedItem, isSelected, toggleSelection } = useAppStore();
+  const { apps, setApps, setScanning, setSelectedItem, clearSelection, isSelected, toggleSelection } = useAppStore();
   const [scanning, setScanningState] = useState(false);
 
   useEffect(() => { handleScan(); }, []);
@@ -96,7 +96,7 @@ function UninstallAppsList() {
     setScanningState(true);
     setScanning(true);
     setApps([]);
-    setSelectedItem(null);
+    clearSelection();
     try {
       const result = await scanApps();
       setApps(result);
