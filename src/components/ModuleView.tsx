@@ -1,5 +1,9 @@
 import { useAppStore } from '@/store';
 import Dashboard from '@/modules/Dashboard';
+import BrewModule from '@/modules/BrewModule';
+import DockerModule from '@/modules/DockerModule';
+import NpmModule from '@/modules/NpmModule';
+import CondaModule from '@/modules/CondaModule';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -14,10 +18,10 @@ function ModuleView() {
 
   const moduleMap: Record<string, React.ReactNode> = {
     dashboard: <Dashboard />,
-    brew: <Placeholder name="Brew 缓存" />,
-    docker: <Placeholder name="Docker 清理" />,
-    npm: <Placeholder name="npm/Node" />,
-    conda: <Placeholder name="Conda/Python" />,
+    brew: <BrewModule />,
+    docker: <DockerModule />,
+    npm: <NpmModule />,
+    conda: <CondaModule />,
     'system-cache': <Placeholder name="系统缓存" />,
     'cli-tools': <Placeholder name="CLI 工具" />,
     downloads: <Placeholder name="Downloads" />,

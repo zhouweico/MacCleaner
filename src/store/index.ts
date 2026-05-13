@@ -12,7 +12,7 @@ export interface AppState {
   isScanning: boolean;
   scanProgress: number;
 
-  setScanResults: (results: Partial<Record<ModuleId, ModuleScanResult>>) => void;
+  setScanResults: (results: Partial<Record<ModuleId, ModuleScanResult>> | ((prev: Partial<Record<ModuleId, ModuleScanResult>>) => Partial<Record<ModuleId, ModuleScanResult>>)) => void;
   setHiddenDirs: (dirs: HiddenDirInfo[]) => void;
   setApps: (apps: AppInfo[]) => void;
   setResiduals: (residuals: AppInfo[]) => void;
@@ -51,7 +51,9 @@ export const useAppStore = create<AppState>((set) => ({
   isScanning: false,
   scanProgress: 0,
 
-  setScanResults: (results) => set({ scanResults: results }),
+  setScanResults: (results) => set((state) => ({
+    scanResults: typeof results === 'function' ? results(state.scanResults) : results,
+  })),
   setHiddenDirs: (dirs) => set({ hiddenDirs: dirs }),
   setApps: (apps) => set({ apps }),
   setResiduals: (residuals) => set({ residuals }),
