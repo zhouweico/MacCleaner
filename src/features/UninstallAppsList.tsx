@@ -95,6 +95,8 @@ function UninstallAppsList() {
   async function handleScan() {
     setScanningState(true);
     setScanning(true);
+    setApps([]);
+    setSelectedItem(null);
     try {
       const result = await scanApps();
       setApps(result);
