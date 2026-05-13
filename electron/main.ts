@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { registerScanHandlers } from './ipc/scan';
 import { registerCleanHandlers } from './ipc/clean';
 import { registerUninstallHandlers } from './ipc/uninstall';
+import { registerScheduleHandlers } from './ipc/schedule';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -40,11 +41,14 @@ function createTray() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 600,
+    width: 1152,
+    height: 712,
+    minWidth: 1152,
+    minHeight: 712,
     show: false,
+    center: true,
     webPreferences: {
-      preload: join(__dirname, 'preload.js'),
+      preload: join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -75,6 +79,7 @@ app.whenReady().then(() => {
   registerScanHandlers();
   registerCleanHandlers();
   registerUninstallHandlers();
+  registerScheduleHandlers(mainWindow!);
 });
 
 app.on('window-all-closed', () => {

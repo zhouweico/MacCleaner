@@ -18,7 +18,7 @@ function Sidebar() {
   );
 
   return (
-    <div className="flex h-full w-48 flex-col border-r border-gray-700 bg-gray-850 p-3">
+    <div className="flex h-full w-[15%] min-w-[140px] flex-col border-r border-gray-700 bg-gray-850 p-3">
       {groups.map(([group, items]) => (
         <div key={group} className={group !== 'clean' ? 'mt-4 border-t border-gray-700 pt-3' : ''}>
           {groupLabels[group] && (

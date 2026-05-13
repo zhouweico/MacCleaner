@@ -1,0 +1,19 @@
+{
+  "appId": "com.maccleaner.app",
+  "productName": "MacCleaner",
+  "directories": {
+    "output": "out"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.utilities",
+    "target": ["dmg", "zip"],
+    "icon": "resources/icon.icns"
+  },
+  "dmg": {
+    "title": "MacCleaner"
+  }
+}

@@ -1,0 +1,109 @@
+<h2>🧹 清理 vs 🗑️ 卸载 — UI 区分</h2>
+<p class="subtitle">两个独立入口，不同颜色标识，避免误操作</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">左侧导航 — 清晰分离</div>
+    <div class="mockup-body" style="padding: 15px; font-family: -apple-system, sans-serif; background: #0f3460; border-radius: 8px; width: 200px; min-height: 300px;">
+      <div style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 6px; padding: 0 8px;">🧹 清理模块</div>
+      <div style="padding: 6px 8px; background: #533483; border-radius: 4px; margin-bottom: 2px; font-size: 11px;">🏠 仪表盘</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">🍺 Brew 缓存</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">🐳 Docker 清理</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">📦 npm/Node</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">🐍 Conda/Python</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">🗂️ 系统缓存</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">🛠️ CLI 工具</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">📥 Downloads</div>
+
+      <div style="border-top: 1px solid #333; margin: 10px 0;"></div>
+
+      <div style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 6px; padding: 0 8px;">🗑️ 卸载管理</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">📱 已安装 APP</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">📦 CLI 工具卸载</div>
+      <div style="padding: 6px 8px; margin-bottom: 2px; font-size: 11px;">🗑️ APP 残留清理</div>
+
+      <div style="border-top: 1px solid #333; margin: 10px 0;"></div>
+      <div style="padding: 6px 8px; font-size: 11px;">⚙️ 设置</div>
+    </div>
+  </div>
+
+  <div>
+    <!-- 清理详情示例 -->
+    <div class="mockup" style="margin-bottom: 16px;">
+      <div class="mockup-header">🧹 清理 — 以 Docker 为例（保留 Docker，只清理无用数据）</div>
+      <div class="mockup-body" style="padding: 12px; font-family: -apple-system, sans-serif; background: #1a1a2e; color: #eee; border-radius: 8px; width: 400px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="font-size: 14px; font-weight: bold;">🐳 Docker 清理</div>
+          <span style="background: #22c55e; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px;">🧹 清理</span>
+        </div>
+        <div style="background: #0f3460; padding: 8px; border-radius: 6px; font-size: 11px; margin-bottom: 8px;">
+          ✅ 保留 Docker 应用本身<br>
+          ✅ 保留正在使用的镜像、容器、volume<br>
+          ❌ 删除：悬空镜像、停止的容器、无用 volume、build cache
+        </div>
+        <div style="font-size: 11px; color: #888;">
+          可清理: <span style="color: #e94560; font-size: 16px; font-weight: bold;">2.1 GB</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 卸载详情示例 -->
+    <div class="mockup">
+      <div class="mockup-header">🗑️ 卸载 — 以 App Cleaner 8 为例（整个 APP 从电脑上移除）</div>
+      <div class="mockup-body" style="padding: 12px; font-family: -apple-system, sans-serif; background: #1a1a2e; color: #eee; border-radius: 8px; width: 400px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="font-size: 14px; font-weight: bold;">🗑️ 卸载 App Cleaner 8</div>
+          <span style="background: #ef4444; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px;">⚠️ 卸载</span>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <div style="background: #0f3460; padding: 10px; border-radius: 6px; text-align: center; flex: 1;">
+            <div style="font-size: 24px;">📱</div>
+            <div style="font-size: 11px;">App Cleaner 8.app</div>
+            <div style="font-size: 10px; color: #888;">245 MB</div>
+          </div>
+          <div style="background: #0f3460; padding: 10px; border-radius: 6px; text-align: center; flex: 1;">
+            <div style="font-size: 24px;">📁</div>
+            <div style="font-size: 11px;">关联文件</div>
+            <div style="font-size: 10px; color: #888;">12 个 • 18 MB</div>
+          </div>
+        </div>
+        <div style="background: #451a1a; padding: 8px; border-radius: 6px; font-size: 11px; border: 1px solid #ef4444;">
+          ⚠️ 以下文件将被<strong style="color: #ef4444;">永久删除</strong>：
+          <ul style="margin: 4px 0 0 16px; font-size: 10px; color: #ccc;">
+            <li>/Applications/App Cleaner 8.app</li>
+            <li>~/Library/Application Support/App Cleaner 8/</li>
+            <li>~/Library/Preferences/com.appcleaner.plist</li>
+            <li>~/Library/Caches/com.appcleaner/</li>
+            <li>~/Library/Saved Application State/com.appcleaner.savedState/</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px;">
+  <h3>核心区别</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>🧹 清理 (Clean)</h4>
+      <ul style="font-size: 12px;">
+        <li><strong>目标</strong>：软件保留，删除无用文件</li>
+        <li><strong>风险</strong>：低，缓存可重建，旧版本不再需要</li>
+        <li><strong>颜色</strong>：🟢 绿色标识（安全操作）</li>
+        <li><strong>频率</strong>：经常，每日自动扫描</li>
+        <li><strong>操作</strong>：安全清理按钮（绿色）</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>🗑️ 卸载 (Uninstall)</h4>
+      <ul style="font-size: 12px;">
+        <li><strong>目标</strong>：软件本身 + 所有关联文件删除</li>
+        <li><strong>风险</strong>：高，删除后需要重新安装</li>
+        <li><strong>颜色</strong>：🔴 红色标识（危险操作）</li>
+        <li><strong>频率</strong>：偶尔，需要时才用</li>
+        <li><strong>操作</strong>：需要二次确认弹窗</li>
+      </ul>
+    </div>
+  </div>
+</div>

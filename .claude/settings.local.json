@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(pkill -f \"Electron.*MacCleaner\")",
+      "Bash(pkill -f \"vite.*electron\")",
+      "Bash(pkill -9 -f \"Electron\")",
+      "Bash(pkill -f \"electron\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(npx vite *)",
+      "Bash(npx electron *)",
+      "Bash(pkill -f \"electron.*cleaner\")",
+      "Bash(pkill -9 -f \"electron\")"
+    ]
+  }
+}

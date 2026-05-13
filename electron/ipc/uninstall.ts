@@ -1,8 +1,11 @@
 import { ipcMain } from 'electron';
-import { scanApps, uninstallApp, scanResidual, scanCliTools, uninstallCliTool } from '../services/uninstaller';
+import { scanApps, uninstallApp, scanResidual, scanCliTools, uninstallCliTool, findAssociatedFiles } from '../services/uninstaller';
 
 export function registerUninstallHandlers() {
   ipcMain.handle('scan:apps', async () => scanApps());
+  ipcMain.handle('scan:app-associated', async (_event, bundleId: string, appName: string) =>
+    findAssociatedFiles(bundleId, appName),
+  );
   ipcMain.handle('uninstall:app', async (_event, appPath: string, paths: string[], keep: boolean) =>
     uninstallApp(appPath, paths, keep),
   );

@@ -15,6 +15,7 @@ export interface ScanItem {
   safeToRemove: boolean;
   description?: string;
   children?: ScanItem[];
+  modifiedAt?: number;
 }
 
 export interface ModuleScanResult {

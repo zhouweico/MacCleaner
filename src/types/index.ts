@@ -17,6 +17,7 @@ export interface ScanItem {
   safeToRemove: boolean;
   description?: string;
   children?: ScanItem[];
+  modifiedAt?: number;
 }
 
 // 模块扫描结果

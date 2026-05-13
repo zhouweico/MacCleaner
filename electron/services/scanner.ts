@@ -268,22 +268,47 @@ async function scanDownloads() {
     for (const file of files) {
       const filePath = join(downloadsPath, file);
       const fileStat = await stat(filePath);
-      if (fileStat.isFile() && fileStat.size > 10 * 1024 * 1024) {
-        items.push({
-          name: file,
-          path: filePath,
-          size: fileStat.size,
-          type: 'unknown',
-          safeToRemove: false,
-        });
-        totalSize += fileStat.size;
+      const isDir = fileStat.isDirectory();
+      const size = isDir ? await getDirSize(filePath) : fileStat.size;
+      let children: ScanItem[] | undefined;
+
+      if (isDir) {
+        children = [];
+        let dirTotal = 0;
+        try {
+          const dirFiles = await readdir(filePath);
+          for (const sub of dirFiles) {
+            const subPath = join(filePath, sub);
+            const subStat = await stat(subPath);
+            const subSize = subStat.isDirectory() ? await getDirSize(subPath) : subStat.size;
+            children.push({
+              name: sub,
+              path: subPath,
+              size: subSize,
+              type: subStat.isDirectory() ? 'data' : 'unknown',
+              safeToRemove: false,
+              modifiedAt: subStat.mtimeMs,
+            });
+            dirTotal += subSize;
+          }
+        } catch { /* no permission */ }
       }
+
+      items.push({
+        name: file,
+        path: filePath,
+        size,
+        type: isDir ? 'data' : 'unknown',
+        safeToRemove: false,
+        modifiedAt: fileStat.mtimeMs,
+        children,
+      });
+      totalSize += size;
     }
   } catch {
     /* 路径不存在 */
   }
 
-  items.sort((a, b) => b.size - a.size);
   return { items, totalSize };
 }
 

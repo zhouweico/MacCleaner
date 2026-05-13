@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import type { ModuleId, ModuleScanResult, AppInfo, NavItem, HiddenDirInfo, CleanResult } from '@/types';
 
+export type SelectedItem = {
+  path: string;
+  name: string;
+  size?: number;
+} | Record<string, unknown>;
+
 export interface AppState {
   currentModule: string;
   setCurrentModule: (id: string) => void;
@@ -22,11 +28,20 @@ export interface AppState {
   lastCleanResult: CleanResult | null;
   setLastCleanResult: (result: CleanResult | null) => void;
 
+  // Selection state for 3-column layout
+  selectedItem: SelectedItem | null;
+  selectedPaths: Set<string>;
+  setSelectedItem: (item: SelectedItem | null) => void;
+  toggleSelection: (path: string) => void;
+  selectItem: (path: string, item?: SelectedItem) => void;
+  clearSelection: () => void;
+  isSelected: (path: string) => boolean;
+
   totalCleanable: number;
 }
 
 export const navItems: NavItem[] = [
-  { id: 'dashboard', label: '仪表盘', icon: '🏠', group: 'clean' },
+  { id: 'dashboard', label: '仪表盘', icon: '', group: 'clean' },
   { id: 'brew', label: 'Brew 缓存', icon: '🍺', group: 'clean' },
   { id: 'docker', label: 'Docker 清理', icon: '🐳', group: 'clean' },
   { id: 'npm', label: 'npm/Node', icon: '📦', group: 'clean' },
@@ -40,9 +55,9 @@ export const navItems: NavItem[] = [
   { id: 'settings', label: '设置', icon: '⚙️', group: 'settings' },
 ];
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   currentModule: 'dashboard',
-  setCurrentModule: (id) => set({ currentModule: id }),
+  setCurrentModule: (id) => set({ currentModule: id, selectedItem: null, selectedPaths: new Set() }),
 
   scanResults: {},
   hiddenDirs: [],
@@ -52,7 +67,10 @@ export const useAppStore = create<AppState>((set) => ({
   scanProgress: 0,
 
   setScanResults: (results) => set((state) => ({
-    scanResults: typeof results === 'function' ? results(state.scanResults) : results,
+    scanResults: {
+      ...state.scanResults,
+      ...(typeof results === 'function' ? results(state.scanResults) : results),
+    },
   })),
   setHiddenDirs: (dirs) => set({ hiddenDirs: dirs }),
   setApps: (apps) => set({ apps }),
@@ -62,6 +80,19 @@ export const useAppStore = create<AppState>((set) => ({
 
   lastCleanResult: null,
   setLastCleanResult: (result) => set({ lastCleanResult: result }),
+
+  // Selection state
+  selectedItem: null,
+  selectedPaths: new Set(),
+  setSelectedItem: (item) => set({ selectedItem: item }),
+  toggleSelection: (path) => set((state) => {
+    const next = new Set(state.selectedPaths);
+    next.has(path) ? next.delete(path) : next.add(path);
+    return { selectedPaths: next };
+  }),
+  selectItem: (path, item) => set({ selectedPaths: new Set([path]), selectedItem: item ?? null }),
+  clearSelection: () => set({ selectedPaths: new Set(), selectedItem: null }),
+  isSelected: (path) => get().selectedPaths.has(path),
 
   get totalCleanable() {
     return Object.values(this.scanResults).reduce<number>(

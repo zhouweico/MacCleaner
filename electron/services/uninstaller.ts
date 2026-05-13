@@ -25,14 +25,12 @@ export async function scanApps(): Promise<AppInfo[]> {
         bundleId = stdout.trim();
       }
 
-      const associatedFiles = await findAssociatedFiles(bundleId, entry);
-
       apps.push({
         name: entry.replace('.app', ''),
         path: appPath,
         bundleId,
         size: appStat.isDirectory() ? await getDirSize(appPath) : appStat.size,
-        associatedFiles,
+        associatedFiles: [],
       });
     }
   } catch { /* 无权限 */ }
@@ -40,7 +38,7 @@ export async function scanApps(): Promise<AppInfo[]> {
   return apps;
 }
 
-async function findAssociatedFiles(bundleId: string, appName: string): Promise<AssociatedFile[]> {
+export async function findAssociatedFiles(bundleId: string, appName: string): Promise<AssociatedFile[]> {
   const files: AssociatedFile[] = [];
   const appNameLower = appName.replace('.app', '').toLowerCase();
 
@@ -183,15 +181,14 @@ export interface CliToolInfo {
 export async function scanCliTools(): Promise<CliToolInfo[]> {
   const tools: CliToolInfo[] = [];
 
-  const { stdout: brewList } = await execFileNoThrow('brew', ['list', '--formula']);
-  for (const pkg of brewList.trim().split('\n').filter(Boolean).slice(0, 50)) {
-    try {
-      const { stdout: info } = await execFileNoThrow('brew', ['info', pkg, '--json=v2']);
-      const data = JSON.parse(info);
-      const version = data.formulae?.[0]?.versions?.stable ?? '';
-      tools.push({ name: pkg, source: 'brew', version, path: `/opt/homebrew/bin/${pkg}` });
-    } catch {}
-  }
+  // brew: get all formula info in one call
+  try {
+    const { stdout: brewInfo } = await execFileNoThrow('brew', ['info', '--json=v2']);
+    const data = JSON.parse(brewInfo);
+    for (const formula of (data.formulae ?? []).slice(0, 50)) {
+      tools.push({ name: formula.name, source: 'brew', version: formula.versions?.stable ?? '', path: `/opt/homebrew/bin/${formula.name}` });
+    }
+  } catch {}
 
   try {
     const { stdout: npmList } = await execFileNoThrow('npm', ['list', '-g', '--depth=0', '--json']);

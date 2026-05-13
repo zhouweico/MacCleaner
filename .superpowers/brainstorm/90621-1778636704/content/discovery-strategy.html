@@ -1,0 +1,89 @@
+<h2>🔍 目录发现策略 — 硬编码 vs 动态扫描</h2>
+<p class="subtitle">你的目录会变，APP 如何适应？</p>
+
+<div class="mockup">
+  <div class="mockup-header">策略对比</div>
+  <div class="mockup-body" style="padding: 15px; font-family: -apple-system, sans-serif;">
+
+    <div style="background: #0f3460; padding: 14px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #ef4444;">
+      <div style="font-weight: bold; color: #ef4444; margin-bottom: 8px;">❌ 纯硬编码（不可取）</div>
+      <code style="font-size: 11px; color: #ccc;">
+        const knownDirs = ['~/.npm', '~/.cache', '~/.docker', '~/.kube', ...]<br>
+        <span style="color: #888;">// 只认这些目录，其他全部忽略</span>
+      </code>
+      <p style="font-size: 11px; margin-top: 6px; color: #aaa;">问题：换了电脑、装了新工具就失效</p>
+    </div>
+
+    <div style="background: #0f3460; padding: 14px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #f59e0b;">
+      <div style="font-weight: bold; color: #f59e0b; margin-bottom: 8px;">⚠️ 纯动态扫描（太激进）</div>
+      <code style="font-size: 11px; color: #ccc;">
+        // 扫描所有 ~/.xxx 目录，按大小排序<br>
+        // ~/.ssh、~/.config、~/.zshrc 全部列出来<br>
+        <span style="color: #888;">// 结果：列出 50+ 目录，用户不知道该删哪个</span>
+      </code>
+      <p style="font-size: 11px; margin-top: 6px; color: #aaa;">问题：列出太多无关目录，误删风险高</p>
+    </div>
+
+    <div style="background: #0f3460; padding: 14px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #22c55e;">
+      <div style="font-weight: bold; color: #22c55e; margin-bottom: 8px;">✅ 混合策略（推荐）</div>
+      <code style="font-size: 11px; color: #ccc;">
+        // 1. 预设「已知目录库」— 能识别的都给友好名称和分类<br>
+        // 2. 动态扫描 — 发现未识别的 ~/.xxx 目录<br>
+        // 3. 智能推断 — 按命名模式推测归属
+      </code>
+    </div>
+
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">混合策略 — 工作流程</div>
+  <div class="mockup-body" style="padding: 15px; font-family: -apple-system, sans-serif;">
+    <div style="font-size: 12px; line-height: 1.6;">
+      <div style="background: #0f3460; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+        <strong style="color: #3b82f6;">步骤 1: 扫描所有 ~/.xxx 目录</strong>
+        <pre style="margin: 4px 0 0; font-size: 10px; color: #aaa;">
+find ~ -maxdepth 1 -name '.*' -type d
+→ 找到 33 个隐藏目录</pre>
+      </div>
+      <div style="background: #0f3460; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+        <strong style="color: #3b82f6;">步骤 2: 匹配已知目录库</strong>
+        <pre style="margin: 4px 0 0; font-size: 10px; color: #aaa;">
+~/.npm     → ✅ 匹配 "npm cache" (可清理缓存)
+~/.docker  → ✅ 匹配 "Docker 配置" (配置类)
+~/.claude  → ✅ 匹配 "Claude Code" (工具数据)
+~/.foobar  → ❌ 未匹配
+~/.bazqux  → ❌ 未匹配</pre>
+      </div>
+      <div style="background: #0f3460; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+        <strong style="color: #3b82f6;">步骤 3: 智能推断未匹配目录</strong>
+        <pre style="margin: 4px 0 0; font-size: 10px; color: #aaa;">
+~/.foobar  → 检查 /Applications 是否有 Foobar.app
+          → 检查 ~/Library 是否有 com.foobar.*
+          → 检查内部结构: 有 node_modules? → 推断为 Node 工具
+          → 有 cache/ 子目录? → 推断为缓存
+          → 有 config.json? → 推断为配置</pre>
+      </div>
+      <div style="background: #0f3460; padding: 12px; border-radius: 6px;">
+        <strong style="color: #3b82f6;">步骤 4: 分类展示</strong>
+        <pre style="margin: 4px 0 0; font-size: 10px; color: #aaa;">
+🟢 已知可清理: ~/.npm (1.2GB) — "npm 包缓存"
+🟡 已知需确认: ~/.docker (3.4MB) — "Docker 配置"
+🟠 未知但可清理: ~/.foobar (50MB) — "推断为缓存目录"
+⚪ 未知待分类: ~/.bazqux (12MB) — "未识别，请用户确认"</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px;">
+  <h3>核心思想</h3>
+  <p><strong>已知目录库是「字典」，不是「白名单」。</strong></p>
+  <p>字典的作用是：</p>
+  <ul>
+    <li>已知目录 → 给友好名称 + 明确分类 + 一键清理</li>
+    <li>未知目录 → 动态发现 + 智能推断 + 标记为「待分类」让用户决定</li>
+    <li>字典会持续更新：用户发现新目录 → 贡献到字典 → 所有人受益</li>
+  </ul>
+  <p style="margin-top: 8px;"><strong>文档里列的目录只是"当前字典"，不是最终列表。</strong></p>
+</div>

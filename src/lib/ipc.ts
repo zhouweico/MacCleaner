@@ -36,6 +36,10 @@ export async function scanApps(): Promise<AppInfo[]> {
   return window.electronAPI.ipc.invoke('scan:apps') as Promise<AppInfo[]>;
 }
 
+export async function scanAppAssociated(bundleId: string, appName: string): Promise<AppInfo['associatedFiles']> {
+  return window.electronAPI.ipc.invoke('scan:app-associated', bundleId, appName) as Promise<AppInfo['associatedFiles']>;
+}
+
 export async function uninstallApp(appPath: string, associatedPaths: string[], keepUserData: boolean): Promise<CleanResult> {
   return window.electronAPI.ipc.invoke('uninstall:app', appPath, associatedPaths, keepUserData) as Promise<CleanResult>;
 }

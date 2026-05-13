@@ -1,8 +1,20 @@
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import { resolve } from 'path';
+
+function forceCjsFormat(): Plugin {
+  return {
+    name: 'force-cjs',
+    config(config) {
+      if (config.build?.lib) {
+        config.build.lib.formats = ['cjs'];
+        config.build.lib.fileName = () => 'main.cjs';
+      }
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
@@ -14,6 +26,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
           },
+          plugins: [forceCjsFormat()],
         },
       },
       {
@@ -25,6 +38,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
           },
+          plugins: [forceCjsFormat()],
         },
       },
     ]),

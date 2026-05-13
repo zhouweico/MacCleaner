@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "macOS 磁盘清理工具",
   "type": "module",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

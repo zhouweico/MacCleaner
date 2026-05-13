@@ -1,0 +1,68 @@
+<h2>🔧 清理模块范围</h2>
+<p class="subtitle">勾选你认为 V1 必须包含的模块（可多选）</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="brew-cache" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>🍺 Brew 缓存 & 旧版本</h3>
+      <p><code>brew cleanup</code> 清理旧版本和下载缓存。你的 Mac 有 97 个 brew 包，163MB 缓存可清理。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="docker" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>🐳 Docker 清理</h3>
+      <p>悬空镜像、停止的容器、未使用的 volume 和 build cache。通常是最大的可清理空间（5-30GB）。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="node-npm" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>📦 npm / Node.js 版本管理</h3>
+      <p>nvm 旧 Node 版本清理、npm 全局包管理、npm cache clean。你当前有 v22 和旧版本残留。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="conda-pip" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>🐍 Conda / Python 环境</h3>
+      <p>废弃 conda 环境清理、pip 缓存、~/.cache/pip。你当前有 bailian-monitor 环境。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="system-cache" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>🗂️ 系统缓存</h3>
+      <p>~/Library/Caches（浏览器缓存、字体缓存、日志等）。你当前 3.6GB，可按大小排序清理。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="app-leftover" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>🗑️ APP 卸载残留</h3>
+      <p>已删除 APP 残留的 plist、preference、support 文件。这就是 App Cleaner 8 的功能，可以内置。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="cli-tools" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>🛠️ CLI 工具管理</h3>
+      <p>Claude Code、Codex、OpenCode 等 CLI 工具版本管理、缓存清理、配置清理。</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="downloads" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>📥 Downloads 管理</h3>
+      <p>下载文件夹大文件扫描、按时间/大小/类型筛选清理。</p>
+    </div>
+  </div>
+</div>
