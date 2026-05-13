@@ -5,7 +5,7 @@ import { formatBytes } from '@/lib/format';
 import type { ScanItem, CleanAction } from '@/types';
 
 function SystemCacheList() {
-  const { scanResults, setScanning, setScanResults, selectedPaths, setSelectedItem, clearSelection, isSelected, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, clearSelection, toggleSelection } = useAppStore();
   const result = scanResults['system-cache'];
 
   useEffect(() => { handleScan(); }, []);
@@ -77,7 +77,7 @@ function SystemCacheList() {
         {result.items.map((item, i) => (
           <div
             key={i}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${isSelected(item.path) ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'}`}
+            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${selectedItem?.path === item.path ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
             onClick={() => handleSelect(item)}
           >
             <input

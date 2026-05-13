@@ -32,7 +32,7 @@ function getFileIcon(name: string, type?: string): string {
 }
 
 function DownloadsList() {
-  const { scanResults, setScanning, setScanResults, selectedPaths, selectItem, clearSelection, isSelected, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, selectItem, clearSelection, toggleSelection } = useAppStore();
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const result = scanResults['downloads'];
@@ -158,7 +158,7 @@ function DownloadsList() {
             return (
               <tr
                 key={item.path}
-                className={`cursor-pointer border-b border-macos-separator ${isSelected(item.path) ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'}`}
+                className={`cursor-pointer border-b border-macos-separator ${selectedItem?.path === item.path ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
                 onClick={() => handleSelect(item)}
               >
                 <td className="p-2" onClick={(e) => e.stopPropagation()}>

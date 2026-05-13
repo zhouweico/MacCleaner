@@ -5,7 +5,7 @@ import { formatBytes } from '@/lib/format';
 import type { AppInfo, CleanAction } from '@/types';
 
 function ResidualCleanerList() {
-  const { residuals, setResiduals, selectedPaths, setSelectedItem, clearSelection, isSelected, toggleSelection } = useAppStore();
+  const { residuals, setResiduals, selectedItem, selectedPaths, setSelectedItem, clearSelection, toggleSelection } = useAppStore();
 
   useEffect(() => { handleScan(); }, []);
 
@@ -70,7 +70,7 @@ function ResidualCleanerList() {
           return (
           <div
             key={resKey}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${isSelected(resKey) ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'}`}
+            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${selectedItem?.path === (res.path || `${res.name}-${i}`) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
             onClick={() => handleSelect(res)}
           >
             <input

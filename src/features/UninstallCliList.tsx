@@ -18,7 +18,7 @@ const sourceColors: Record<string, string> = {
 };
 
 function UninstallCliList() {
-  const { setSelectedItem, toggleSelection, isSelected } = useAppStore();
+  const { selectedItem, setSelectedItem, toggleSelection, isSelected } = useAppStore();
   const [tools, setTools] = useState<CliTool[]>([]);
   const [scanning, setScanning] = useState(false);
 
@@ -59,7 +59,7 @@ function UninstallCliList() {
           return (
           <div
             key={toolKey}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${isSelected(toolKey) ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'}`}
+            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${selectedItem?.path === (tool.path || `${tool.source}-${tool.name}-${i}`) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
             onClick={() => handleSelect(tool)}
           >
             <input
