@@ -28,7 +28,7 @@ function LayoutWrapper() {
 
   if (currentModule === 'dashboard') {
     return (
-      <div className="flex-1 overflow-auto bg-gray-900 p-6">
+      <div className="flex-1 overflow-auto bg-macos-content p-6">
         <Dashboard />
       </div>
     );
@@ -36,7 +36,7 @@ function LayoutWrapper() {
 
   if (currentModule === 'settings') {
     return (
-      <div className="flex-1 overflow-auto bg-gray-900 p-6">
+      <div className="flex-1 overflow-auto bg-macos-content p-6">
         <SettingsView />
       </div>
     );

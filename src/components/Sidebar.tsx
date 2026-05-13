@@ -18,11 +18,11 @@ function Sidebar() {
   );
 
   return (
-    <div className="flex h-full w-[15%] min-w-[140px] flex-col border-r border-gray-700 bg-gray-850 p-3">
+    <div className="flex h-full w-[15%] min-w-[140px] flex-col border-r border-macos-separator bg-macos-sidebar p-3">
       {groups.map(([group, items]) => (
-        <div key={group} className={group !== 'clean' ? 'mt-4 border-t border-gray-700 pt-3' : ''}>
+        <div key={group} className={group !== 'clean' ? 'mt-4 border-t border-macos-separator pt-3' : ''}>
           {groupLabels[group] && (
-            <div className="mb-1 px-2 text-xs uppercase text-gray-500">{groupLabels[group]}</div>
+            <div className="mb-1 px-2 text-xs uppercase text-macos-text-tertiary">{groupLabels[group]}</div>
           )}
           {items.map((item) => (
             <button
@@ -30,8 +30,8 @@ function Sidebar() {
               onClick={() => setCurrentModule(item.id)}
               className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
                 currentModule === item.id
-                  ? 'bg-purple-700 text-white'
-                  : 'text-gray-300 hover:bg-gray-700'
+                  ? 'bg-macos-accent/20 text-macos-accent'
+                  : 'text-macos-text-primary hover:bg-macos-surface'
               }`}
             >
               <span>{item.icon}</span>

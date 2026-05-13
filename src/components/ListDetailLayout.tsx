@@ -12,10 +12,10 @@ function ListDetailLayout({ list, detail, bottomBar, listWidth = 'w-[35%]' }: Li
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <div className={`${listWidth} flex-shrink-0 overflow-hidden border-r border-gray-700 bg-gray-900`}>
+      <div className={`${listWidth} flex-shrink-0 overflow-hidden border-r border-macos-separator bg-macos-content`}>
         {list}
       </div>
-      <div className="flex-1 flex flex-col overflow-hidden bg-gray-900">
+      <div className="flex-1 flex flex-col overflow-hidden bg-macos-content">
         <div className="flex-1 overflow-y-auto">
           {selectedItem ? detail : <EmptyDetail />}
         </div>
@@ -27,7 +27,7 @@ function ListDetailLayout({ list, detail, bottomBar, listWidth = 'w-[35%]' }: Li
 
 function EmptyDetail() {
   return (
-    <div className="flex h-full items-center justify-center text-gray-500">
+    <div className="flex h-full items-center justify-center text-macos-text-tertiary">
       <p>选择一项以查看详情</p>
     </div>
   );

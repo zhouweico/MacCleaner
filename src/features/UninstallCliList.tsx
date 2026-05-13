@@ -44,12 +44,12 @@ function UninstallCliList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">🖥️ CLI 工具卸载</h2>
-          <p className="text-xs text-gray-500">{tools.length} 个工具</p>
+          <p className="text-xs text-macos-text-tertiary">{tools.length} 个工具</p>
         </div>
-        <button onClick={handleScan} disabled={scanning} className="rounded bg-blue-600 px-2.5 py-1.5 text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+        <button onClick={handleScan} disabled={scanning} className="rounded bg-macos-accent px-2.5 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50">
           {scanning ? '扫描中...' : '重新扫描'}
         </button>
       </div>
@@ -59,7 +59,7 @@ function UninstallCliList() {
           return (
           <div
             key={toolKey}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-gray-800/50 ${isSelected(toolKey) ? 'bg-blue-600/10' : 'hover:bg-gray-800/50'}`}
+            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${isSelected(toolKey) ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'}`}
             onClick={() => handleSelect(tool)}
           >
             <input
@@ -69,19 +69,19 @@ function UninstallCliList() {
               onClick={(e) => e.stopPropagation()}
               className="rounded shrink-0"
             />
-            <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-sm shrink-0">🖥️</div>
+            <div className="w-8 h-8 rounded bg-macos-surface flex items-center justify-center text-sm shrink-0">🖥️</div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium truncate">{tool.name}</div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
-                <span className="text-xs text-gray-500">v{tool.version}</span>
+                <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
               </div>
             </div>
             {tool.size && <div className="text-sm font-medium shrink-0 ml-2">{formatBytes(tool.size)}</div>}
           </div>
         );
         })}
-        {tools.length === 0 && <p className="p-4 text-gray-500">{scanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>}
+        {tools.length === 0 && <p className="p-4 text-macos-text-tertiary">{scanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>}
       </div>
     </div>
   );
@@ -91,7 +91,7 @@ export function UninstallCliDetail() {
   const { selectedItem } = useAppStore();
   const [uninstalling, setUninstalling] = useState(false);
 
-  if (!selectedItem) return <p className="text-gray-500">选择一项以查看详情</p>;
+  if (!selectedItem) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
 
   const tool = selectedItem as unknown as CliTool;
 
@@ -106,15 +106,15 @@ export function UninstallCliDetail() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-gray-700 px-4 py-4">
+      <div className="border-b border-macos-separator px-4 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-xl shrink-0">🖥️</div>
+            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl shrink-0">🖥️</div>
             <div>
               <h2 className="text-lg font-bold">{tool.name}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
-                <span className="text-xs text-gray-500">v{tool.version}</span>
+                <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
               </div>
             </div>
           </div>
@@ -123,17 +123,17 @@ export function UninstallCliDetail() {
       <div className="flex-1 overflow-y-auto px-4 py-3">
         <div className="space-y-2 text-sm">
           {tool.path && (
-            <div className="flex justify-between"><span className="text-gray-400">路径</span><span className="text-gray-500 text-xs break-all text-right ml-4">{tool.path}</span></div>
+            <div className="flex justify-between"><span className="text-macos-text-secondary">路径</span><span className="text-macos-text-tertiary text-xs break-all text-right ml-4">{tool.path}</span></div>
           )}
-          <div className="flex justify-between"><span className="text-gray-400">版本</span><span>{tool.version}</span></div>
-          <div className="flex justify-between"><span className="text-gray-400">来源</span><span>{tool.source}</span></div>
+          <div className="flex justify-between"><span className="text-macos-text-secondary">版本</span><span>{tool.version}</span></div>
+          <div className="flex justify-between"><span className="text-macos-text-secondary">来源</span><span>{tool.source}</span></div>
         </div>
       </div>
-      <div className="border-t border-gray-700 px-4 py-3 bg-gray-850 flex justify-end">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content flex justify-end">
         <button
           onClick={handleUninstall}
           disabled={uninstalling}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold hover:bg-red-700 disabled:opacity-50"
+          className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red disabled:opacity-50"
         >
           {uninstalling ? '卸载中...' : `卸载 ${tool.name}`}
         </button>

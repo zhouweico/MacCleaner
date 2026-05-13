@@ -43,9 +43,9 @@ function CollapsibleSection({ title, files, checkedFiles, onToggleFile, defaultE
   const checkedCount = files.filter(f => checkedFiles.has(f.path)).length;
 
   return (
-    <div className="border border-gray-700 rounded-lg mb-2 overflow-hidden">
+    <div className="border border-macos-separator rounded-lg mb-2 overflow-hidden bg-macos-surface/50">
       <div
-        className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-gray-800/50"
+        className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-macos-surface-hover"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
@@ -60,24 +60,24 @@ function CollapsibleSection({ title, files, checkedFiles, onToggleFile, defaultE
             onClick={(e) => e.stopPropagation()}
             className="rounded shrink-0"
           />
-          <span className="text-xs text-gray-400">{expanded ? '▾' : '▸'}</span>
+          <span className="text-xs text-macos-text-tertiary">{expanded ? '▾' : '▸'}</span>
           <span className="text-sm font-medium">{title}</span>
         </div>
-        <span className="text-xs text-gray-500">{files.length} 个文件 · {formatBytes(totalSize)}</span>
+        <span className="text-xs text-macos-text-tertiary">{files.length} 个文件 · {formatBytes(totalSize)}</span>
       </div>
       {expanded && (
-        <div className="border-t border-gray-700">
+        <div className="border-t border-macos-separator">
           {files.map((f, i) => (
-            <label key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-800/30 text-xs cursor-pointer">
+            <label key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-macos-surface-hover/30 text-xs cursor-pointer">
               <input
                 type="checkbox"
                 checked={checkedFiles.has(f.path)}
                 onChange={(e) => onToggleFile(f.path, e.target.checked)}
                 className="rounded shrink-0"
               />
-              <span className="text-gray-500 shrink-0">{f.type === 'binary' ? '⚙️' : f.type === 'cache' ? '🗂️' : '📁'}</span>
-              <span className="text-gray-300 truncate flex-1 min-w-0">{f.path}</span>
-              <span className="text-gray-500 shrink-0 ml-2">{formatBytes(f.size)}</span>
+              <span className="text-macos-text-tertiary shrink-0">{f.type === 'binary' ? '⚙️' : f.type === 'cache' ? '🗂️' : '📁'}</span>
+              <span className="text-macos-text-primary truncate flex-1 min-w-0">{f.path}</span>
+              <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(f.size)}</span>
             </label>
           ))}
         </div>
@@ -118,15 +118,15 @@ function UninstallAppsList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">📱 已安装 APP</h2>
-          <p className="text-xs text-gray-500">{totalApps} 个应用 · {formatBytes(totalSize)}</p>
+          <p className="text-xs text-macos-text-tertiary">{totalApps} 个应用 · {formatBytes(totalSize)}</p>
         </div>
         <button
           onClick={handleScan}
           disabled={scanning}
-          className="rounded bg-blue-600 px-2.5 py-1.5 text-xs font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="rounded bg-macos-accent px-2.5 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50"
         >
           {scanning ? '扫描中...' : '重新扫描'}
         </button>
@@ -137,8 +137,8 @@ function UninstallAppsList() {
           <button
             key={i}
             onClick={() => handleSelectApp(app)}
-            className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors border-b border-gray-800/50 ${
-              isSelected(app.path) ? 'bg-blue-600/20' : 'hover:bg-gray-800/50'
+            className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors border-b border-macos-separator ${
+              isSelected(app.path) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'
             }`}
           >
             <input
@@ -148,21 +148,21 @@ function UninstallAppsList() {
               onClick={(e) => e.stopPropagation()}
               className="rounded shrink-0"
             />
-            <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-sm shrink-0">
+            <div className="w-8 h-8 rounded bg-macos-surface flex items-center justify-center text-sm shrink-0">
               📱
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium truncate">{app.name}</div>
-              <div className="text-xs text-gray-500">{formatDate((app as any).modifiedAt)}</div>
+              <div className="text-xs text-macos-text-tertiary">{formatDate((app as any).modifiedAt)}</div>
             </div>
             <div className="text-right shrink-0">
               <div className="text-sm font-medium">{formatBytes(app.size)}</div>
-              <div className="text-xs text-gray-500">{app.associatedFiles.length} 权限</div>
+              <div className="text-xs text-macos-text-tertiary">{app.associatedFiles.length} 权限</div>
             </div>
           </button>
         ))}
         {apps.length === 0 && (
-          <p className="py-8 text-center text-gray-500">{scanning ? '扫描中...' : '没有检测到 APP'}</p>
+          <p className="py-8 text-center text-macos-text-tertiary">{scanning ? '扫描中...' : '没有检测到 APP'}</p>
         )}
       </div>
     </div>
@@ -175,7 +175,7 @@ export function UninstallAppsDetail() {
   const [checkedFiles, setCheckedFiles] = useState<Set<string>>(new Set());
 
   if (!selectedItem || !('associatedFiles' in selectedItem)) {
-    return <p className="text-gray-500">选择一项以查看详情</p>;
+    return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
   }
 
   const app = selectedItem as unknown as AppInfo;
@@ -215,26 +215,26 @@ export function UninstallAppsDetail() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-gray-700 px-4 py-4">
+      <div className="border-b border-macos-separator px-4 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-xl shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl shrink-0">
               📱
             </div>
             <div>
               <h2 className="text-lg font-bold">{app.name}</h2>
-              <p className="text-xs text-gray-500">{app.path}</p>
+              <p className="text-xs text-macos-text-tertiary">{app.path}</p>
             </div>
           </div>
           <div className="text-right shrink-0">
             <div className="text-lg font-bold">{formatBytes(totalSize)}</div>
-            <p className="text-xs text-gray-500">{app.associatedFiles.length + 1} 个项目</p>
+            <p className="text-xs text-macos-text-tertiary">{app.associatedFiles.length + 1} 个项目</p>
           </div>
         </div>
       </div>
 
       {/* Keep user data */}
-      <div className="border-b border-gray-700 px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={keepUserData} onChange={e => setKeepUserData(e.target.checked)} className="rounded" />
           保留用户数据（Documents、Application Support 中的用户文件）
@@ -266,23 +266,23 @@ export function UninstallAppsDetail() {
       </div>
 
       {/* Bottom action bar */}
-      <div className="border-t border-gray-700 px-4 py-3 bg-gray-850">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm">
-            <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-gray-500">所选</span></span>
-            <span><span className="font-bold">{selectedCount}</span> <span className="text-gray-500">个项目所选</span></span>
+            <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
+            <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">个项目所选</span></span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedItem(null)}
-              className="rounded-lg bg-gray-600 px-4 py-2 text-sm font-medium hover:bg-gray-500"
+              className="rounded-lg bg-macos-surface px-4 py-2 text-sm font-medium hover:bg-macos-surface-hover"
             >
               取消
             </button>
             <button
               onClick={handleUninstall}
               disabled={selectedCount === 0}
-              className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-bold hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-macos-accent px-6 py-2 text-sm font-bold hover:bg-macos-accent-hover disabled:opacity-50"
             >
               移除
             </button>

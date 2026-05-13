@@ -57,15 +57,15 @@ function StorageBar({ diskInfo }: { diskInfo: DiskInfo | null }) {
   const freePercent = 100 - diskInfo.usagePercent;
 
   return (
-    <div className="bg-gray-800 rounded-xl p-4">
+    <div className="bg-macos-surface rounded-xl p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-base font-bold">Macintosh HD</h2>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-macos-text-secondary">
             已使用 {formatBytes(diskInfo.used)} / {formatBytes(diskInfo.total)}
           </span>
-          <button className="rounded bg-gray-700 px-3 py-1 text-xs font-medium hover:bg-gray-600">
+          <button className="rounded bg-macos-content px-3 py-1 text-xs font-medium hover:bg-macos-content">
             全部宗卷...
           </button>
         </div>
@@ -73,7 +73,7 @@ function StorageBar({ diskInfo }: { diskInfo: DiskInfo | null }) {
 
       {/* Progress bar */}
       <div className="flex items-center gap-4 mb-3">
-        <div className="flex-1 h-6 rounded-full overflow-hidden flex bg-gray-700">
+        <div className="flex-1 h-6 rounded-full overflow-hidden flex bg-macos-content">
           {segments.map(([key, size]) => {
             const percent = (size / diskInfo.total) * 100;
             if (percent < 1) return null;
@@ -88,7 +88,7 @@ function StorageBar({ diskInfo }: { diskInfo: DiskInfo | null }) {
           })}
           <div
             style={{ width: `${freePercent}%` }}
-            className="bg-gray-600"
+            className="bg-macos-content"
           />
         </div>
       </div>
@@ -102,7 +102,7 @@ function StorageBar({ diskInfo }: { diskInfo: DiskInfo | null }) {
           return (
             <div key={key} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categoryColors[key] }} />
-              <span className="text-gray-400">{categoryLabels[key]}</span>
+              <span className="text-macos-text-secondary">{categoryLabels[key]}</span>
             </div>
           );
         })}
@@ -135,7 +135,7 @@ function ModuleCards() {
           <button
             key={item.id}
             onClick={() => setCurrentModule(item.id)}
-            className="bg-gray-800 rounded-xl p-4 text-left hover:bg-gray-750 transition-colors"
+            className="bg-macos-surface rounded-xl p-4 text-left hover:bg-macos-surface-hover transition-colors"
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{item.icon}</span>
@@ -143,13 +143,13 @@ function ModuleCards() {
             </div>
             <div className="text-xl font-bold">{formatBytes(item.size)}</div>
             <div className="flex items-center gap-2 mt-1.5">
-              <div className="flex-1 h-1 rounded-full bg-gray-700 overflow-hidden">
+              <div className="flex-1 h-1 rounded-full bg-macos-content overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-500 transition-all"
+                  className="h-full rounded-full bg-macos-accent transition-all"
                   style={{ width: `${percent}%` }}
                 />
               </div>
-              <span className="text-xs text-gray-500">{percent}%</span>
+              <span className="text-xs text-macos-text-tertiary">{percent}%</span>
             </div>
           </button>
         );
@@ -194,7 +194,7 @@ function Dashboard() {
         <button
           onClick={handleScan}
           disabled={isScanning}
-          className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="rounded bg-macos-accent px-3 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50"
         >
           {isScanning ? '扫描中...' : '重新扫描'}
         </button>
@@ -206,7 +206,7 @@ function Dashboard() {
       {/* Module cards */}
       {totalCleanable > 0 && (
         <div>
-          <h2 className="text-xs font-semibold text-gray-400 mb-2">
+          <h2 className="text-xs font-semibold text-macos-text-secondary mb-2">
             可清理空间 · {formatBytes(totalCleanable)}
           </h2>
           <ModuleCards />

@@ -30,7 +30,7 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
-        checked ? 'bg-blue-500' : 'bg-gray-600'
+        checked ? 'bg-macos-accent' : 'bg-macos-surface-hover'
       }`}
     >
       <span
@@ -68,24 +68,24 @@ function SettingsView() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-gray-900 px-8 py-6">
+    <div className="flex h-full flex-col overflow-y-auto bg-macos-content px-8 py-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">⚙️ 设置</h1>
-        <p className="mt-1 text-sm text-gray-500">自定义 MacCleaner 的行为和外观</p>
+        <p className="mt-1 text-sm text-macos-text-tertiary">自定义 MacCleaner 的行为和外观</p>
       </div>
 
       {/* Schedule card */}
-      <div className="rounded-xl bg-gray-800/80 mb-4 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-700/50">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">定时扫描</h2>
+      <div className="rounded-xl bg-macos-surface mb-4 overflow-hidden">
+        <div className="px-4 py-3 border-b border-macos-separator">
+          <h2 className="text-sm font-semibold text-macos-text-tertiary uppercase tracking-wide">定时扫描</h2>
         </div>
         <div className="px-4">
           {/* Enable toggle */}
-          <div className="flex items-center justify-between py-3 border-b border-gray-700/50">
+          <div className="flex items-center justify-between py-3 border-b border-macos-separator">
             <div>
               <div className="text-sm font-medium">启用每日自动扫描</div>
-              <div className="text-xs text-gray-500">每天在指定时间自动扫描系统</div>
+              <div className="text-xs text-macos-text-tertiary">每天在指定时间自动扫描系统</div>
             </div>
             <ToggleSwitch checked={scheduleEnabled} onChange={setScheduleEnabled} />
           </div>
@@ -98,7 +98,7 @@ function SettingsView() {
                 type="time"
                 value={scanTime}
                 onChange={(e) => setScanTime(e.target.value)}
-                className="rounded-lg bg-gray-700 px-3 py-1.5 text-sm text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
               />
             </div>
           )}
@@ -106,16 +106,16 @@ function SettingsView() {
       </div>
 
       {/* AI card */}
-      <div className="rounded-xl bg-gray-800/80 mb-4 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-700/50">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">AI 增强分析</h2>
+      <div className="rounded-xl bg-macos-surface mb-4 overflow-hidden">
+        <div className="px-4 py-3 border-b border-macos-separator">
+          <h2 className="text-sm font-semibold text-macos-text-tertiary uppercase tracking-wide">AI 增强分析</h2>
         </div>
         <div className="px-4">
           {/* Enable toggle */}
-          <div className="flex items-center justify-between py-3 border-b border-gray-700/50">
+          <div className="flex items-center justify-between py-3 border-b border-macos-separator">
             <div>
               <div className="text-sm font-medium">启用 AI 分析</div>
-              <div className="text-xs text-gray-500">使用本地 AI 模型分析可清理内容</div>
+              <div className="text-xs text-macos-text-tertiary">使用本地 AI 模型分析可清理内容</div>
             </div>
             <ToggleSwitch checked={aiEnabled} onChange={setAiEnabled} />
           </div>
@@ -124,14 +124,14 @@ function SettingsView() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium">Ollama 地址</div>
-                  <div className="text-xs text-gray-500">本地 Ollama 服务地址</div>
+                  <div className="text-xs text-macos-text-tertiary">本地 Ollama 服务地址</div>
                 </div>
                 <input
                   type="text"
                   value={ollamaUrl}
                   onChange={(e) => setOllamaUrl(e.target.value)}
                   placeholder="http://localhost:11434"
-                  className="w-64 rounded-lg bg-gray-700 px-3 py-1.5 text-sm text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  className="w-64 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
                 />
               </div>
             </div>
@@ -143,7 +143,7 @@ function SettingsView() {
       <div className="flex justify-end mt-4">
         <button
           onClick={handleSave}
-          className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="rounded-lg bg-macos-accent px-6 py-2 text-sm font-medium hover:bg-macos-accent-hover transition-colors"
         >
           {saved ? '已保存 ✓' : '保存设置'}
         </button>
