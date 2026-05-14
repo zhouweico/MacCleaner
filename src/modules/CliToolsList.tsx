@@ -144,7 +144,7 @@ function CliToolsList() {
       </div>
 
       {selectedCount > 0 && (
-        <div className="border-t border-macos-separator px-4 py-2.5 bg-macos-content flex items-center justify-between text-xs">
+        <div className="border-t border-macos-separator px-4 py-2.5 bg-macos-content-light flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
             <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
             <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">个项目所选</span></span>
@@ -191,7 +191,7 @@ export function CliToolsDetail() {
           </div>
         )}
       </div>
-      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content flex justify-end">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
         <button onClick={() => {}} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red">
           移至废纸篓
         </button>

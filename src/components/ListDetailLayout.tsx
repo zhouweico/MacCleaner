@@ -15,7 +15,7 @@ function ListDetailLayout({ list, detail, bottomBar, listWidth = 'w-[35%]' }: Li
       <div className={`${listWidth} flex-shrink-0 overflow-hidden border-r border-macos-separator bg-macos-content`}>
         {list}
       </div>
-      <div className="flex-1 flex flex-col overflow-hidden bg-macos-content">
+      <div className="flex-1 flex flex-col overflow-hidden bg-macos-content-light">
         <div className="flex-1 overflow-y-auto">
           {selectedItem ? detail : <EmptyDetail />}
         </div>

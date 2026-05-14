@@ -110,7 +110,7 @@ function Sidebar() {
     <div className="flex h-full w-[220px] min-w-[220px] flex-col bg-macos-sidebar border-r border-macos-separator">
       {/* 搜索栏 */}
       <div className="px-3 pt-3 pb-2">
-        <div className="relative flex items-center gap-1.5 px-2 py-1.5 bg-macos-surface rounded-md">
+        <div className="relative flex items-center gap-1.5 px-2.5 py-1.5 bg-macos-sidebar-hover/60 rounded-lg">
           <svg className="w-3.5 h-3.5 text-macos-text-tertiary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />

@@ -156,7 +156,7 @@ export function UninstallCliDetail() {
           <div className="flex justify-between"><span className="text-macos-text-secondary">来源</span><span>{tool.source}</span></div>
         </div>
       </div>
-      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content flex justify-end">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
         <button
           onClick={handleUninstall}
           disabled={uninstalling}

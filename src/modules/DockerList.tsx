@@ -145,7 +145,7 @@ export function DockerDetail() {
           </div>
         )}
       </div>
-      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content flex justify-end">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
         <button onClick={() => {}} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green">
           安全清理
         </button>
