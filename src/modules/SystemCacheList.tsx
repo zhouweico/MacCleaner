@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule, advancedClean } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -6,10 +6,29 @@ import type { ScanItem, CleanAction } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
 function SystemCacheList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
   const result = scanResults['system-cache'];
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current || !result) return;
+    const item = result.items.find(i => i.path === searchTargetPath);
+    if (item) {
+      setSelectedItem(item as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(item.path);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, result]);
 
   async function handleScan() {
     setScanning(true);
@@ -82,6 +101,10 @@ function SystemCacheList() {
               return (
                 <div
                   key={i}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(item.path, el);
+                    else rowRefs.current.delete(item.path);
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => handleSelect(item)}
                 >

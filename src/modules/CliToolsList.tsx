@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -14,10 +14,42 @@ async function moveToTrash(paths: string[]) {
 }
 
 function CliToolsList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
   const result = scanResults['cli-tools'];
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current || !result) return;
+    // Match by path, or by source:name composite key for tools with empty path
+    let item: ScanItem | undefined;
+    if (result.items.some(i => i.path === searchTargetPath)) {
+      item = result.items.find(i => i.path === searchTargetPath);
+    } else {
+      const [src, ...nameParts] = searchTargetPath.split(':');
+      if (nameParts.length > 0) {
+        const targetName = nameParts.join(':');
+        item = result.items.find(i =>
+          (i as unknown as { source?: string; name: string }).source === src &&
+          (i as unknown as { name: string }).name === targetName
+        );
+      }
+    }
+    if (item) {
+      setSelectedItem(item as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(item.path || `${(item as unknown as { source: string; name: string }).source}:${item.name}`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, result]);
 
   async function handleScan() {
     setScanning(true);
@@ -78,10 +110,14 @@ function CliToolsList() {
         {result.items.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {result.items.map((item, i) => {
-              const selected = selectedItem?.path === item.path || isSelected(item.path);
+              const selected = isSelected(item.path) || (selectedItem?.path === item.path && (item.path !== '' || selectedItem?.name === item.name));
               return (
                 <div
                   key={i}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(item.path || `${(item as unknown as { source: string; name: string }).source}:${item.name}`, el);
+                    else rowRefs.current.delete(item.path || `${(item as unknown as { source: string; name: string }).source}:${item.name}`);
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => setSelectedItem(item as unknown as SelectedItem)}
                 >

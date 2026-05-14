@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanApps, scanAppAssociated, uninstallApp, showItemInFolder, getFinderIcon } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -122,10 +122,29 @@ function CollapsibleSection({ title, files, checkedFiles, onToggleFile, defaultE
 }
 
 function UninstallAppsList() {
-  const { apps, setApps, setScanning, setSelectedItem, clearSelection, selectedItem, isSelected, toggleSelection } = useAppStore();
+  const { apps, setApps, setScanning, setSelectedItem, clearSelection, selectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
   const [scanning, setScanningState] = useState(false);
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    if (apps.length === 0) handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current) return;
+    const app = apps.find(a => a.path === searchTargetPath);
+    if (app) {
+      setSelectedItem({ ...app, path: app.path } as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(app.path);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, apps]);
 
   async function handleScan() {
     setScanningState(true);
@@ -159,7 +178,7 @@ function UninstallAppsList() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold">📱 已安装 APP</h2>
+          <h2 className="text-sm font-semibold">📱 应用程序</h2>
           <p className="text-xs text-macos-text-tertiary">{totalApps} 个应用 · {formatBytes(totalSize)}</p>
         </div>
         <button
@@ -179,6 +198,10 @@ function UninstallAppsList() {
               return (
                 <button
                   key={i}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(app.path, el);
+                    else rowRefs.current.delete(app.path);
+                  }}
                   onClick={() => handleSelectApp(app)}
                   className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                 >

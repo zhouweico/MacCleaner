@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
-import { scanAll } from '@/lib/ipc';
+import { scanAll, scanApps, scanResidual } from '@/lib/ipc';
+import type { AppInfo } from '@/types';
 import { formatBytes } from '@/lib/format';
 import { navItems } from '@/store';
 
@@ -158,8 +159,64 @@ function ModuleCards() {
   );
 }
 
+interface UninstallModuleCard {
+  id: string;
+  label: string;
+  icon: string;
+  size: number;
+  count: number;
+}
+
+function UninstallCards({ apps, residuals }: { apps: AppInfo[]; residuals: AppInfo[] }) {
+  const { setCurrentModule } = useAppStore();
+  const [cliCount, setCliCount] = useState(0);
+  const [cliSize, setCliSize] = useState(0);
+
+  useEffect(() => {
+    window.electronAPI.ipc.invoke('scan:cli-tools').then((tools: unknown) => {
+      const list = tools as { size?: number }[];
+      setCliCount(list.length);
+      setCliSize(list.reduce((s, t) => s + (t.size ?? 0), 0));
+    }).catch(() => {});
+  }, []);
+
+  const modules: UninstallModuleCard[] = [
+    { id: 'uninstall-apps', label: '应用程序', icon: '📱', size: apps.reduce((s, a) => s + a.size, 0), count: apps.length },
+    { id: 'uninstall-cli', label: 'CLI 工具卸载', icon: '️', size: cliSize, count: cliCount },
+    { id: 'residual-clean', label: '残留文件', icon: '🗑️', size: residuals.reduce((s, r) => s + r.size, 0), count: residuals.length },
+  ].filter(m => m.count > 0);
+
+  if (modules.length === 0) return null;
+
+  const totalSize = modules.reduce((s, m) => s + m.size, 0);
+
+  return (
+    <div>
+      <h2 className="text-xs font-semibold mb-2">
+        卸载管理 · {formatBytes(totalSize)}
+      </h2>
+      <div className="grid grid-cols-3 gap-3">
+        {modules.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setCurrentModule(item.id)}
+            className="bg-macos-surface rounded-xl p-4 text-left hover:bg-macos-surface-hover transition-colors"
+          >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-sm font-semibold truncate">{item.label}</span>
+              </div>
+              <div className="text-xl font-bold">{formatBytes(item.size)}</div>
+              <div className="text-xs text-macos-text-tertiary mt-1">{item.count} 项</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard() {
-  const { scanResults, setScanResults, isScanning, setScanning } = useAppStore();
+  const { scanResults, setScanResults, setApps, setResiduals, setCliTools, apps, residuals, isScanning, setScanning } = useAppStore();
   const [diskInfo, setDiskInfo] = useState<DiskInfo | null>(null);
 
   useEffect(() => {
@@ -168,6 +225,10 @@ function Dashboard() {
     }
     // 获取磁盘信息
     window.electronAPI.ipc.invoke('disk:info').then((data: unknown) => setDiskInfo(data as DiskInfo));
+    // 预加载卸载模块数据，供全局搜索使用
+    scanApps().then(setApps).catch(() => {});
+    scanResidual().then(setResiduals).catch(() => {});
+    window.electronAPI.ipc.invoke('scan:cli-tools').then((tools: unknown) => setCliTools(tools as { name: string; source: string; version: string; path: string; size?: number }[])).catch(() => {});
   }, []);
 
   async function handleScan() {
@@ -211,6 +272,11 @@ function Dashboard() {
           </h2>
           <ModuleCards />
         </div>
+      )}
+
+      {/* Uninstall cards */}
+      {(apps.length > 0 || residuals.length > 0) && (
+        <UninstallCards apps={apps} residuals={residuals} />
       )}
     </div>
   );

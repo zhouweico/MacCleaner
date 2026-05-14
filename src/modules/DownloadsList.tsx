@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -22,12 +22,31 @@ function formatDate(ts: number) {
 }
 
 function DownloadsList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, selectItem, isSelected, clearSelection, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, selectItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const result = scanResults['downloads'];
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current || !result) return;
+    const item = result.items.find(i => i.path === searchTargetPath);
+    if (item) {
+      selectItem(item.path, item as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(item.path);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, result]);
 
   async function handleScan() {
     setScanning(true);
@@ -99,7 +118,7 @@ function DownloadsList() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold">📥 Downloads</h2>
+          <h2 className="text-sm font-semibold">📥 下载</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
         </div>
         <div className="flex gap-1.5">
@@ -149,6 +168,10 @@ function DownloadsList() {
               return (
                 <div
                   key={item.path}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(item.path, el);
+                    else rowRefs.current.delete(item.path);
+                  }}
                   className={`flex items-center gap-3 px-3 py-2 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${idx > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => handleSelect(item)}
                 >

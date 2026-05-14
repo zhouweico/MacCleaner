@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react';
-import { useAppStore, type SelectedItem } from '@/store';
+import { useEffect, useRef, useState } from 'react';
+import { useAppStore, type AppState, type SelectedItem } from '@/store';
 import { uninstallCliTool } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 
-interface CliTool {
-  name: string;
-  source: 'brew' | 'npm' | 'pip';
-  version: string;
-  path: string;
-  size?: number;
-}
+type CliTool = AppState['cliTools'][number];
 
 const sourceColors: Record<string, string> = {
   brew: 'bg-orange-500/20 text-orange-400',
@@ -18,52 +12,79 @@ const sourceColors: Record<string, string> = {
 };
 
 function UninstallCliList() {
-  const { selectedItem, setSelectedItem, toggleSelection, isSelected } = useAppStore();
-  const [tools, setTools] = useState<CliTool[]>([]);
-  const [scanning, setScanning] = useState(false);
+  const { cliTools, setCliTools, selectedItem, setSelectedItem, toggleSelection, isSelected, isScanning, setScanning, searchTargetPath } = useAppStore();
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    if (cliTools.length === 0) handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current) return;
+    // Match by path if non-empty, else by source:name composite key
+    const tool = cliTools.find(t => {
+      const key = t.path || `${t.source}:${t.name}`;
+      return key === searchTargetPath || t.path === searchTargetPath;
+    });
+    if (tool) {
+      const key = getToolKey(tool, cliTools.indexOf(tool));
+      setSelectedItem({ ...tool, path: tool.path || key } as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(key);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, cliTools]);
 
   async function handleScan() {
     setScanning(true);
     try {
       const result = await window.electronAPI.ipc.invoke('scan:cli-tools') as CliTool[];
-      setTools(result);
+      setCliTools(result);
     } finally {
       setScanning(false);
     }
   }
 
-  function handleSelect(tool: CliTool) {
-    setSelectedItem(tool as unknown as SelectedItem);
+  function handleSelect(tool: (typeof cliTools)[number], i: number) {
+    const key = getToolKey(tool, i);
+    setSelectedItem({ ...tool, path: tool.path || key } as unknown as SelectedItem);
   }
 
-  function getToolKey(tool: CliTool, i: number) {
-    return tool.path || `${tool.source}-${tool.name}-${i}`;
+  function getToolKey(tool: (typeof cliTools)[number], _i: number) {
+    return tool.path || `${tool.source}:${tool.name}`;
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold">🖥️ CLI 工具卸载</h2>
-          <p className="text-xs text-macos-text-tertiary">{tools.length} 个工具</p>
+          <h2 className="text-sm font-semibold">️ CLI 工具卸载</h2>
+          <p className="text-xs text-macos-text-tertiary">{cliTools.length} 个工具</p>
         </div>
-        <button onClick={handleScan} disabled={scanning} className="rounded bg-macos-accent px-2.5 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50">
-          {scanning ? '扫描中...' : '重新扫描'}
+        <button onClick={handleScan} disabled={isScanning} className="rounded bg-macos-accent px-2.5 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50">
+          {isScanning ? '扫描中...' : '重新扫描'}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3">
-        {tools.length > 0 ? (
+        {cliTools.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
-            {tools.map((tool, i) => {
+            {cliTools.map((tool, i) => {
               const toolKey = getToolKey(tool, i);
-              const selected = selectedItem?.path === (tool.path || `${tool.source}-${tool.name}-${i}`) || isSelected(toolKey);
+              const selected = selectedItem?.path === toolKey || isSelected(toolKey);
               return (
                 <div
                   key={toolKey}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(toolKey, el);
+                    else rowRefs.current.delete(toolKey);
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
-                  onClick={() => handleSelect(tool)}
+                  onClick={() => handleSelect(tool, i)}
                 >
                   <input
                     type="checkbox"
@@ -86,7 +107,7 @@ function UninstallCliList() {
             })}
           </div>
         ) : (
-          <p className="p-4 text-macos-text-tertiary">{scanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>
+          <p className="p-4 text-macos-text-tertiary">{isScanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>
         )}
       </div>
     </div>
@@ -94,12 +115,12 @@ function UninstallCliList() {
 }
 
 export function UninstallCliDetail() {
-  const { selectedItem } = useAppStore();
+  const { selectedItem, cliTools } = useAppStore();
   const [uninstalling, setUninstalling] = useState(false);
 
   if (!selectedItem) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
 
-  const tool = selectedItem as unknown as CliTool;
+  const tool = cliTools.find(t => t.path === selectedItem.path) ?? (selectedItem as unknown as { name: string; source: string; version: string; path: string; size?: number });
 
   async function handleUninstall() {
     setUninstalling(true);

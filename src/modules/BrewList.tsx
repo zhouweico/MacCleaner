@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -7,11 +7,30 @@ import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
 function BrewList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
   const { doSafeClean } = useClean();
   const result = scanResults['brew'];
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current || !result) return;
+    const item = result.items.find(i => i.path === searchTargetPath);
+    if (item) {
+      setSelectedItem(item as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(item.path);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, result]);
 
   async function handleScan() {
     setScanning(true);
@@ -38,7 +57,7 @@ function BrewList() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold">🍺 Brew 缓存</h2>
+          <h2 className="text-sm font-semibold">🍺 Homebrew</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
         </div>
         <button onClick={handleClean} className="rounded bg-macos-green px-2.5 py-1.5 text-xs font-medium hover:bg-macos-green">⚡ 安全清理</button>
@@ -51,6 +70,10 @@ function BrewList() {
               return (
                 <div
                   key={i}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(item.path, el);
+                    else rowRefs.current.delete(item.path);
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => handleSelect(item)}
                 >

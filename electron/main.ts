@@ -11,6 +11,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 function createTray() {
   tray = new Tray(nativeImage.createEmpty());
   tray.setToolTip('MacCleaner');

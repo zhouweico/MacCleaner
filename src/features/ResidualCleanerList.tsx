@@ -1,13 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanResidual, advancedClean } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import type { AppInfo, CleanAction } from '@/types';
 
 function ResidualCleanerList() {
-  const { residuals, setResiduals, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection } = useAppStore();
+  const { residuals, setResiduals, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
+  const lastAutoSelectPath = useRef('');
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => { handleScan(); }, []);
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    if (residuals.length === 0) handleScan();
+  }, []);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current) return;
+    const idx = residuals.findIndex(r => r.path === searchTargetPath);
+    const res = idx !== -1 ? residuals[idx] : null;
+    if (res) {
+      const key = res.path || `${res.name}-${idx}`;
+      setSelectedItem({ ...res, path: key } as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      // Scroll to selected row
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(key);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, residuals]);
 
   async function handleScan() {
     try {
@@ -29,8 +51,9 @@ function ResidualCleanerList() {
     await handleScan();
   }
 
-  function handleSelect(res: AppInfo) {
-    setSelectedItem(res as unknown as SelectedItem);
+  function handleSelect(res: AppInfo, i: number) {
+    const key = res.path || `${res.name}-${i}`;
+    setSelectedItem({ ...res, path: key } as unknown as SelectedItem);
   }
 
   function selectAll() {
@@ -49,7 +72,7 @@ function ResidualCleanerList() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold">🗑️ APP 残留清理</h2>
+          <h2 className="text-sm font-semibold">🗑️ 残留文件</h2>
           <p className="text-xs text-macos-text-tertiary">{residuals.length} 项</p>
         </div>
         <div className="flex gap-1.5">
@@ -69,12 +92,16 @@ function ResidualCleanerList() {
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {residuals.map((res, i) => {
               const resKey = res.path || `${res.name}-${i}`;
-              const selected = selectedItem?.path === (res.path || `${res.name}-${i}`) || isSelected(resKey);
+              const selected = selectedItem?.path === resKey || isSelected(resKey);
               return (
                 <div
                   key={resKey}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(resKey, el);
+                    else rowRefs.current.delete(resKey);
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
-                  onClick={() => handleSelect(res)}
+                  onClick={() => handleSelect(res, i)}
                 >
                   <input
                     type="checkbox"
