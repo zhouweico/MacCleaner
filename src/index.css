@@ -69,3 +69,17 @@ button:focus-visible {
   outline: 2px solid #0A84FF;
   outline-offset: 2px;
 }
+
+/* 窗口拖动区域 - 整个应用可拖动 */
+.app-container {
+  -webkit-app-region: drag;
+}
+
+/* 交互元素不可拖动 */
+.app-container button,
+.app-container input,
+.app-container a,
+.app-container [role="button"],
+.app-container [class*="cursor-"] {
+  -webkit-app-region: no-drag;
+}

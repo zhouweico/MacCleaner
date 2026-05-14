@@ -59,6 +59,8 @@ function createWindow() {
     minHeight: 712,
     show: false,
     center: true,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 20, y: 20 },
     webPreferences: {
       preload: join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -77,12 +79,14 @@ function createWindow() {
     }
   });
 
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(join(__dirname, '../dist/index.html'));
-  }
+  // 临时加载生产版本测试新样式
+  mainWindow.loadFile(join(__dirname, '../dist/index.html'));
+  // if (process.env.NODE_ENV === 'development') {
+  //   mainWindow.loadURL('http://localhost:5173');
+  //   mainWindow.webContents.openDevTools();
+  // } else {
+  //   mainWindow.loadFile(join(__dirname, '../dist/index.html'));
+  // }
 }
 
 app.whenReady().then(() => {

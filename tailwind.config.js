@@ -6,13 +6,15 @@ export default {
       colors: {
         macos: {
           // macOS System Settings 风格深色主题
-          sidebar: '#1d1d1f',         // 侧边栏背景（最深）
-          'sidebar-hover': '#2a2a2e', // 侧边栏 hover
+          bg: '#1e1e1e',              // 整体背景（窗口底色）
+          sidebar: '#2d2d2d',         // 侧边栏背景（圆角框）
+          'sidebar-hover': '#3a3a3a', // 侧边栏 hover
           'sidebar-active': '#007AFF', // 侧边栏选中（实心蓝）
-          content: '#232326',         // 中间栏背景（中间态）
-          'content-light': '#28282b', // 右边栏背景（最浅）
-          surface: '#2d2d30',         // 卡片/分组背景（最亮）
-          'surface-hover': '#363638', // 卡片内 hover
+          content: '#252525',         // 中间栏背景
+          'content-light': '#2a2a2a', // 右边栏背景
+          surface: '#323232',         // 卡片/分组背景
+          'surface-hover': '#3d3d3d', // 卡片内 hover
+          'header-bg': '#353535',     // 中间栏顶部选项卡背景
           separator: 'rgba(255,255,255,0.08)',
           'text-primary': '#f5f5f7',
           'text-secondary': 'rgba(235,235,245,0.6)',

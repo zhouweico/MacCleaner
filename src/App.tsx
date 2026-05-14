@@ -3,7 +3,7 @@ import LayoutWrapper from '@/components/LayoutWrapper';
 
 function App() {
   return (
-    <div className="flex h-screen w-screen bg-macos-sidebar text-macos-text-primary">
+    <div className="app-container flex h-screen w-screen bg-macos-bg text-macos-text-primary">
       <Sidebar />
       <LayoutWrapper />
     </div>

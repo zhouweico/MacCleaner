@@ -4,13 +4,13 @@ import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import { resolve } from 'path';
 
-function forceCjsFormat(): Plugin {
+function forceCjsFormat(entryName: string): Plugin {
   return {
     name: 'force-cjs',
     config(config) {
       if (config.build?.lib) {
         config.build.lib.formats = ['cjs'];
-        config.build.lib.fileName = () => 'main.cjs';
+        config.build.lib.fileName = () => `${entryName}.cjs`;
       }
     },
   };
@@ -29,7 +29,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
           },
-          plugins: [forceCjsFormat()],
+          plugins: [forceCjsFormat('main')],
         },
       },
       {
@@ -41,7 +41,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
           },
-          plugins: [forceCjsFormat()],
+          plugins: [forceCjsFormat('preload')],
         },
       },
     ]),
