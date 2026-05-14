@@ -4,6 +4,7 @@ import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import { useClean } from '@/hooks/useClean';
 import type { ScanItem } from '@/types';
+import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
 function BrewList() {
   const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection } = useAppStore();
@@ -91,22 +92,12 @@ export function BrewDetail() {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        {item.children && item.children.length > 0 ? (
-          <div className="space-y-1 text-xs">
-            {item.children.map((child, i) => {
-              const c = child as unknown as ScanItem;
-              return (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-macos-separator">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="shrink-0">{c.type === 'data' ? '📁' : '📄'}</span>
-                    <span className="truncate text-macos-text-secondary">{c.name}</span>
-                  </div>
-                  <span className="ml-2 shrink-0 text-macos-text-tertiary">{formatBytes(c.size)}</span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
+        <CollapsibleFileSection
+          title="文件列表"
+          files={item.children?.map(c => ({ name: (c as unknown as ScanItem).name, path: (c as unknown as ScanItem).path, size: (c as unknown as ScanItem).size, isDir: (c as unknown as ScanItem).type === 'data' })) ?? []}
+          defaultExpanded
+        />
+        {!item.children?.length && (
           <div className="space-y-2 text-sm">
             {item.description && (
               <div className="flex justify-between"><span className="text-macos-text-secondary">描述</span><span className="text-right">{item.description}</span></div>
