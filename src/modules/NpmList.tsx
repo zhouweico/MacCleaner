@@ -96,12 +96,29 @@ export function NpmDetail() {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div className="space-y-2 text-sm">
-          {item.description && (
-            <div className="flex justify-between"><span className="text-macos-text-secondary">描述</span><span className="text-right">{item.description}</span></div>
-          )}
-          <div className="flex justify-between"><span className="text-macos-text-secondary">安全清理</span><span className={item.safeToRemove ? 'text-green-400' : 'text-orange-400'}>{item.safeToRemove ? '是' : '否'}</span></div>
-        </div>
+        {item.children && item.children.length > 0 ? (
+          <div className="space-y-1 text-xs">
+            {item.children.map((child, i) => {
+              const c = child as unknown as ScanItem;
+              return (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-macos-separator">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="shrink-0">{c.type === 'data' ? '📁' : '📄'}</span>
+                    <span className="truncate text-macos-text-secondary">{c.name}</span>
+                  </div>
+                  <span className="ml-2 shrink-0 text-macos-text-tertiary">{formatBytes(c.size)}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-2 text-sm">
+            {item.description && (
+              <div className="flex justify-between"><span className="text-macos-text-secondary">描述</span><span className="text-right">{item.description}</span></div>
+            )}
+            <div className="flex justify-between"><span className="text-macos-text-secondary">安全清理</span><span className={item.safeToRemove ? 'text-green-400' : 'text-orange-400'}>{item.safeToRemove ? '是' : '否'}</span></div>
+          </div>
+        )}
       </div>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content flex justify-end">
         <button onClick={() => {}} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green">
