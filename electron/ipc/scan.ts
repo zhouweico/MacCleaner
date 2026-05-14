@@ -1,7 +1,38 @@
 import type { ModuleId } from '../types';
-import { ipcMain } from 'electron';
+import { ipcMain, shell, app } from 'electron';
 import { scanAllModules, scanModule } from '../services/scanner';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
+import { existsSync } from 'fs';
+import { join } from 'path';
+
+let finderIconDataUri: string | null = null;
+
+async function getFinderIconDataUri(): Promise<string> {
+  if (finderIconDataUri) return finderIconDataUri;
+
+  try {
+    // Try multiple possible locations for Finder app
+    const finderPaths = [
+      '/System/Library/CoreServices/Finder.app',
+      join(app.getPath('exe'), '..', '..', '..', 'Finder.app'), // Electron fallback
+    ];
+
+    for (const finderPath of finderPaths) {
+      if (existsSync(finderPath)) {
+        const icon = app.getFileIcon(finderPath, { size: 'normal' });
+        const nativeImg = await icon;
+        finderIconDataUri = nativeImg.toDataURL();
+        return finderIconDataUri;
+      }
+    }
+  } catch (e) {
+    console.error('[finder] get icon failed:', e);
+  }
+
+  // Fallback: use a simple Finder-like SVG as data URI
+  finderIconDataUri = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGI1Y2Y2IiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSI0Ii8+PGNpcmNsZSBjeD0iOSIgY3k9IjEwIiByPSIxIiBmaWxsPSIjOGI1Y2Y2IiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSIxNSIgY3k9IjEwIiByPSIxIiBmaWxsPSIjOGI1Y2Y2IiBzdHJva2U9Im5vbmUiLz48cGF0aCBkPSJNOSA5LjVhMy41IDMuNSAwIDAgMCA2IDAiLz48L3N2Zz4=';
+  return finderIconDataUri;
+}
 
 export function registerScanHandlers() {
   ipcMain.handle('scan:all', async () => {
@@ -33,5 +64,19 @@ export function registerScanHandlers() {
       console.error('[disk] get info failed:', e);
     }
     return null;
+  });
+
+  ipcMain.handle('finder:show-item', async (_event, filePath: string) => {
+    try {
+      shell.showItemInFolder(filePath);
+      return { success: true };
+    } catch (e) {
+      console.error('[finder] showItemInFolder failed:', e);
+      return { success: false, error: String(e) };
+    }
+  });
+
+  ipcMain.handle('finder:icon', async () => {
+    return { iconDataUri: await getFinderIconDataUri() };
   });
 }

@@ -3,6 +3,7 @@ import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import type { ScanItem } from '@/types';
+import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
 async function moveToTrash(paths: string[]) {
   for (const p of paths) {
@@ -18,17 +19,6 @@ type SortOrder = 'asc' | 'desc';
 function formatDate(ts: number) {
   const d = new Date(ts);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function getFileIcon(name: string, type?: string): string {
-  if (type === 'data') return '📁';
-  const ext = name.split('.').pop()?.toLowerCase();
-  const types: Record<string, string> = {
-    dmg: '📦', zip: '📦', tar: '📦', gz: '📦',
-    pdf: '📄', doc: '📄', docx: '📄',
-    png: '🖼️', jpg: '🖼️', jpeg: '🖼️', mp4: '🎬', mov: '🎬',
-  };
-  return types[ext ?? ''] ?? '📄';
 }
 
 function DownloadsList() {
@@ -129,59 +119,61 @@ function DownloadsList() {
         </div>
       </div>
 
-      <table className="w-full table-fixed text-xs">
-        <thead>
-          <tr className="border-b border-macos-separator text-macos-text-tertiary">
-            <th className="w-8 p-2">
-              <input
-                type="checkbox"
-                checked={selectedCount > 0 && sortedItems.every(i => isSelected(i.path))}
-                onChange={() => (selectedCount > 0 ? deselectAll() : selectAll())}
-                className="rounded"
-              />
-            </th>
-            <th className="w-10 pb-2 text-left font-medium">类型</th>
-            <th className="pb-2 text-left font-medium cursor-pointer hover:text-macos-text-primary" onClick={() => handleSort('name')}>
-              名称 {sortKey === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
-            </th>
-            <th className="w-20 pb-2 text-right font-medium cursor-pointer hover:text-macos-text-primary" onClick={() => handleSort('size')}>
-              大小 {sortKey === 'size' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
-            </th>
-            <th className="w-28 pb-2 text-right font-medium cursor-pointer hover:text-macos-text-primary" onClick={() => handleSort('date')}>
-              日期 {sortKey === 'date' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedItems.map((item) => {
-            const hasChildren = item.children && item.children.length > 0;
-            return (
-              <tr
-                key={item.path}
-                className={`cursor-pointer border-b border-macos-separator ${(selectedItem?.path === item.path || isSelected(item.path)) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
-                onClick={() => handleSelect(item)}
-              >
-                <td className="p-2" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected(item.path)}
-                    onChange={() => handleCheck(item)}
-                    className="rounded"
-                  />
-                </td>
-                <td className="p-2 text-center text-sm">{getFileIcon(item.name, item.type)}</td>
-                <td className="p-2 truncate">
-                  <div className="font-medium truncate">{item.name}</div>
-                  {hasChildren && <div className="text-xs text-macos-text-tertiary">{item.children!.length} 项</div>}
-                </td>
-                <td className="p-2 text-right font-medium">{formatBytes(item.size)}</td>
-                <td className="p-2 text-right text-macos-text-tertiary">{item.modifiedAt ? formatDate(item.modifiedAt) : '-'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {result.items.length === 0 && <p className="p-4 text-macos-text-tertiary">Downloads 目录为空</p>}
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        {sortedItems.length > 0 ? (
+          <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
+            {/* Table header */}
+            <div className="flex items-center gap-3 px-3 py-2 border-b border-macos-separator text-xs text-macos-text-tertiary">
+              <div className="w-4">
+                <input
+                  type="checkbox"
+                  checked={selectedCount > 0 && sortedItems.every(i => isSelected(i.path))}
+                  onChange={() => (selectedCount > 0 ? deselectAll() : selectAll())}
+                  className="rounded"
+                />
+              </div>
+              <div className="flex-1 cursor-pointer hover:text-macos-text-primary" onClick={() => handleSort('name')}>
+                名称 {sortKey === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+              </div>
+              <div className="w-[56px] text-right cursor-pointer hover:text-macos-text-primary" onClick={() => handleSort('size')}>
+                大小 {sortKey === 'size' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+              </div>
+              <div className="w-[72px] text-right cursor-pointer hover:text-macos-text-primary" onClick={() => handleSort('date')}>
+                日期 {sortKey === 'date' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+              </div>
+            </div>
+            {/* Rows */}
+            {sortedItems.map((item, idx) => {
+              const hasChildren = item.children && item.children.length > 0;
+              const selected = selectedItem?.path === item.path || isSelected(item.path);
+              return (
+                <div
+                  key={item.path}
+                  className={`flex items-center gap-3 px-3 py-2 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${idx > 0 ? 'border-t border-macos-separator' : ''}`}
+                  onClick={() => handleSelect(item)}
+                >
+                  <div className="w-4" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected(item.path)}
+                      onChange={() => handleCheck(item)}
+                      className="rounded"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate text-macos-text-primary">{item.name}</div>
+                    {hasChildren && <div className="text-xs text-macos-text-tertiary">{item.children!.length} 项</div>}
+                  </div>
+                  <div className="w-[56px] text-right text-xs text-macos-text-secondary">{formatBytes(item.size)}</div>
+                  <div className="w-[72px] text-right text-xs text-macos-text-tertiary">{item.modifiedAt ? formatDate(item.modifiedAt) : '-'}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="p-4 text-macos-text-tertiary">Downloads 目录为空</p>
+        )}
+      </div>
 
       {/* Bottom bar */}
       {selectedCount > 0 && (
@@ -205,66 +197,67 @@ export function DownloadsDetail() {
   if (!selectedItem) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
 
   const item = selectedItem as unknown as ScanItem;
+
+  // 无子项：显示单文件详情
   if (!item.children || item.children.length === 0) {
     return (
-      <div className="p-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl">{getFileIcon(item.name, item.type)}</div>
-          <div>
-            <h2 className="text-lg font-bold">{item.name}</h2>
-            <p className="text-xs text-macos-text-tertiary">{item.path}</p>
+      <div className="flex h-full flex-col">
+        <div className="border-b border-macos-separator px-4 py-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg macos-icon-indigo flex items-center justify-center text-xl shrink-0">📥</div>
+              <div>
+                <h2 className="text-lg font-bold">{item.name}</h2>
+                <p className="text-xs text-macos-text-tertiary">{item.path}</p>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-lg font-bold">{formatBytes(item.size)}</div>
+            </div>
           </div>
         </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-macos-text-secondary">大小</span><span className="font-bold">{formatBytes(item.size)}</span></div>
-          {item.modifiedAt && <div className="flex justify-between"><span className="text-macos-text-secondary">修改时间</span><span>{formatDate(item.modifiedAt)}</span></div>}
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          <div className="space-y-2 text-sm">
+            {item.modifiedAt && (
+              <div className="flex justify-between"><span className="text-macos-text-secondary">修改时间</span><span>{formatDate(item.modifiedAt)}</span></div>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
+  // 有子项：使用 CollapsibleFileSection 显示文件列表
   const childTotal = item.children.reduce((s, c) => s + (c as unknown as ScanItem).size, 0);
 
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl">📁</div>
-          <div>
-            <h2 className="text-lg font-bold">{item.name}</h2>
-            <p className="text-xs text-macos-text-tertiary">{item.path}</p>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg macos-icon-indigo flex items-center justify-center text-xl shrink-0">📥</div>
+            <div>
+              <h2 className="text-lg font-bold">{item.name}</h2>
+              <p className="text-xs text-macos-text-tertiary">{item.path}</p>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="text-lg font-bold">{formatBytes(childTotal)}</div>
+            <p className="text-xs text-macos-text-tertiary">{item.children.length} 项</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 mt-2 text-xs text-macos-text-tertiary">
-          <span>{item.children.length} 项</span>
-          <span>{formatBytes(childTotal)}</span>
-        </div>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        <table className="w-full table-fixed text-xs">
-          <thead>
-            <tr className="border-b border-macos-separator text-macos-text-tertiary">
-              <th className="pb-2 text-left pl-4 font-medium">名称</th>
-              <th className="w-24 pb-2 text-right font-medium">大小</th>
-              <th className="w-28 pb-2 text-right font-medium">日期</th>
-            </tr>
-          </thead>
-          <tbody>
-            {item.children.map((child, i) => {
-              const c = child as unknown as ScanItem;
-              return (
-                <tr key={i} className="border-b border-macos-separator hover:bg-macos-surface-hover">
-                  <td className="p-2 pl-4 truncate">
-                    <span className="mr-2">{getFileIcon(c.name, c.type)}</span>
-                    <span className="truncate">{c.name}</span>
-                  </td>
-                  <td className="p-2 text-right text-macos-text-secondary">{formatBytes(c.size)}</td>
-                  <td className="p-2 text-right text-macos-text-tertiary">{c.modifiedAt ? formatDate(c.modifiedAt) : '-'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="flex-1 overflow-y-auto px-4 py-3">
+        <CollapsibleFileSection
+          title="文件列表"
+          files={item.children.map(c => ({
+            name: (c as unknown as ScanItem).name,
+            path: (c as unknown as ScanItem).path,
+            size: (c as unknown as ScanItem).size,
+            isDir: (c as unknown as ScanItem).type === 'data',
+          }))}
+          defaultExpanded
+        />
       </div>
     </div>
   );

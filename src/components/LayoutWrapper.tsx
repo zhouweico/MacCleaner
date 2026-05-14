@@ -18,7 +18,6 @@ function LayoutWrapper() {
   const { currentModule, setSelectedItem } = useAppStore();
   const prevModule = useRef(currentModule);
 
-  // 同步清空：在浏览器绘制前，切换模块时立即清空右栏选中详情
   useLayoutEffect(() => {
     if (currentModule !== prevModule.current) {
       setSelectedItem(null);
@@ -49,7 +48,7 @@ function LayoutWrapper() {
     conda: { list: <CondaList />, detail: <CondaDetail /> },
     'system-cache': { list: <SystemCacheList />, detail: <SystemCacheDetail /> },
     'cli-tools': { list: <CliToolsList />, detail: <CliToolsDetail /> },
-    downloads: { list: <DownloadsList />, detail: <DownloadsDetail />, listWidth: 'w-[38%]' },
+    downloads: { list: <DownloadsList />, detail: <DownloadsDetail /> },
     'uninstall-apps': { list: <UninstallAppsList />, detail: <UninstallAppsDetail /> },
     'uninstall-cli': { list: <UninstallCliList />, detail: <UninstallCliDetail /> },
     'residual-clean': { list: <ResidualCleanerList />, detail: <ResidualCleanerDetail /> },

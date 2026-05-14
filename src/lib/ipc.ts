@@ -71,3 +71,12 @@ export async function scanCliToolsList(): Promise<unknown[]> {
 export async function uninstallCliTool(name: string, source: string): Promise<CleanResult> {
   return window.electronAPI.ipc.invoke('uninstall:cli', name, source) as Promise<CleanResult>;
 }
+
+export async function showItemInFolder(filePath: string): Promise<{ success: boolean; error?: string }> {
+  return window.electronAPI.ipc.invoke('finder:show-item', filePath) as Promise<{ success: boolean; error?: string }>;
+}
+
+export async function getFinderIcon(): Promise<string> {
+  const result = await window.electronAPI.ipc.invoke('finder:icon') as { iconDataUri: string };
+  return result.iconDataUri;
+}

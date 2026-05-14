@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatBytes } from '@/lib/format';
+import { showItemInFolder, getFinderIcon } from '@/lib/ipc';
 
 interface FileEntry {
   name: string;
@@ -17,6 +18,9 @@ interface CollapsibleFileSectionProps {
   onToggleFile?: (path: string, checked: boolean) => void;
 }
 
+// Cache finder icon globally
+let finderIconCache: string | null = null;
+
 export default function CollapsibleFileSection({
   title,
   files,
@@ -26,10 +30,26 @@ export default function CollapsibleFileSection({
   onToggleFile,
 }: CollapsibleFileSectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [finderIcon, setFinderIcon] = useState<string | null>(finderIconCache);
   const totalSize = files.reduce((s, f) => s + f.size, 0);
   const checkedCount = showCheckbox ? files.filter(f => checkedFiles.has(f.path)).length : 0;
 
+  useEffect(() => {
+    if (!finderIconCache) {
+      getFinderIcon().then((icon) => {
+        finderIconCache = icon;
+        setFinderIcon(icon);
+      });
+    }
+  }, []);
+
   if (files.length === 0) return null;
+
+  async function handleOpenFinder(path: string) {
+    await showItemInFolder(path);
+  }
+
+  const iconSrc = finderIcon || finderIconCache;
 
   return (
     <div className="border border-macos-separator rounded-lg mb-2 overflow-hidden bg-macos-surface/50">
@@ -59,7 +79,7 @@ export default function CollapsibleFileSection({
       {expanded && (
         <div className="border-t border-macos-separator">
           {files.map((f, i) => (
-            <label key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-macos-surface-hover/30 text-xs cursor-pointer">
+            <div key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-macos-surface-hover/30 text-xs group">
               {showCheckbox && onToggleFile && (
                 <input
                   type="checkbox"
@@ -70,8 +90,24 @@ export default function CollapsibleFileSection({
               )}
               <span className="text-macos-text-tertiary shrink-0">{f.isDir ? '📁' : '📄'}</span>
               <span className="text-macos-text-primary truncate flex-1 min-w-0">{f.path}</span>
+              {f.isDir && (
+                <button
+                  onClick={() => handleOpenFinder(f.path)}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0 rounded hover:bg-macos-surface-hover"
+                  title="在访达中打开"
+                >
+                  {iconSrc ? (
+                    <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                      <rect x="9" y="3" width="6" height="4" rx="1" />
+                    </svg>
+                  )}
+                </button>
+              )}
               <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(f.size)}</span>
-            </label>
+            </div>
           ))}
         </div>
       )}

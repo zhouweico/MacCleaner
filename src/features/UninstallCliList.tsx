@@ -53,35 +53,41 @@ function UninstallCliList() {
           {scanning ? '扫描中...' : '重新扫描'}
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        {tools.map((tool, i) => {
-          const toolKey = getToolKey(tool, i);
-          return (
-          <div
-            key={toolKey}
-            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-macos-separator ${(selectedItem?.path === (tool.path || `${tool.source}-${tool.name}-${i}`) || isSelected(toolKey)) ? 'bg-macos-accent/20' : 'hover:bg-macos-surface-hover'}`}
-            onClick={() => handleSelect(tool)}
-          >
-            <input
-              type="checkbox"
-              checked={isSelected(toolKey)}
-              onChange={() => toggleSelection(toolKey)}
-              onClick={(e) => e.stopPropagation()}
-              className="rounded shrink-0"
-            />
-            <div className="w-8 h-8 rounded bg-macos-surface flex items-center justify-center text-sm shrink-0">🖥️</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{tool.name}</div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
-                <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
-              </div>
-            </div>
-            {tool.size && <div className="text-sm font-medium shrink-0 ml-2">{formatBytes(tool.size)}</div>}
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        {tools.length > 0 ? (
+          <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
+            {tools.map((tool, i) => {
+              const toolKey = getToolKey(tool, i);
+              const selected = selectedItem?.path === (tool.path || `${tool.source}-${tool.name}-${i}`) || isSelected(toolKey);
+              return (
+                <div
+                  key={toolKey}
+                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
+                  onClick={() => handleSelect(tool)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected(toolKey)}
+                    onChange={() => toggleSelection(toolKey)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded shrink-0"
+                  />
+                  <div className="w-8 h-8 rounded-lg macos-icon-indigo flex items-center justify-center text-sm shrink-0">🖥️</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate text-macos-text-primary">{tool.name}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
+                      <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
+                    </div>
+                  </div>
+                  {tool.size && <div className="text-xs text-macos-text-secondary shrink-0">{formatBytes(tool.size)}</div>}
+                </div>
+              );
+            })}
           </div>
-        );
-        })}
-        {tools.length === 0 && <p className="p-4 text-macos-text-tertiary">{scanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>}
+        ) : (
+          <p className="p-4 text-macos-text-tertiary">{scanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>
+        )}
       </div>
     </div>
   );
@@ -109,7 +115,7 @@ export function UninstallCliDetail() {
       <div className="border-b border-macos-separator px-4 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl shrink-0">🖥️</div>
+            <div className="w-10 h-10 rounded-lg macos-icon-indigo flex items-center justify-center text-xl shrink-0">🖥️</div>
             <div>
               <h2 className="text-lg font-bold">{tool.name}</h2>
               <div className="flex items-center gap-2 mt-1">
