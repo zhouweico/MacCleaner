@@ -160,9 +160,9 @@ export function UninstallCliDetail() {
         <button
           onClick={handleUninstall}
           disabled={uninstalling}
-          className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red disabled:opacity-50"
+          className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
         >
-          {uninstalling ? '卸载中...' : `卸载 ${tool.name}`}
+          {uninstalling ? '卸载中...' : '卸载'}
         </button>
       </div>
     </div>

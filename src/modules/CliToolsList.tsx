@@ -93,7 +93,7 @@ function CliToolsList() {
           {selectedCount > 0 ? (
             <>
               <button onClick={deselectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">取消选择</button>
-              <button onClick={handleClean} className="rounded bg-macos-red px-2 py-1 text-xs font-medium hover:bg-macos-red">移至废纸篓 ({selectedPaths.size})</button>
+              <button onClick={handleClean} className="rounded bg-macos-red px-2 py-1 text-xs font-medium hover:bg-macos-red-hover">移至废纸篓 ({selectedPaths.size})</button>
             </>
           ) : (
             <>
@@ -149,7 +149,7 @@ function CliToolsList() {
             <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
             <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">个项目所选</span></span>
           </div>
-          <button onClick={handleClean} className="rounded-lg bg-macos-red px-4 py-1.5 text-xs font-bold hover:bg-macos-red">
+          <button onClick={handleClean} className="rounded-lg bg-macos-red px-4 py-1.5 text-xs font-bold hover:bg-macos-red-hover">
             移至废纸篓
           </button>
         </div>
@@ -192,7 +192,7 @@ export function CliToolsDetail() {
         )}
       </div>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
-        <button onClick={() => {}} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red">
+        <button onClick={() => {}} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover">
           移至废纸篓
         </button>
       </div>

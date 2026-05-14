@@ -79,14 +79,8 @@ function createWindow() {
     }
   });
 
-  // 临时加载生产版本测试新样式
-  mainWindow.loadFile(join(__dirname, '../dist/index.html'));
-  // if (process.env.NODE_ENV === 'development') {
-  //   mainWindow.loadURL('http://localhost:5173');
-  //   mainWindow.webContents.openDevTools();
-  // } else {
-  //   mainWindow.loadFile(join(__dirname, '../dist/index.html'));
-  // }
+  mainWindow.loadURL('http://localhost:5173');
+  mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {

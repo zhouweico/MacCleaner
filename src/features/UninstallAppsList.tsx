@@ -356,9 +356,9 @@ export function UninstallAppsDetail() {
             <button
               onClick={handleUninstall}
               disabled={selectedCount === 0}
-              className="rounded-lg bg-macos-accent px-6 py-2 text-sm font-bold hover:bg-macos-accent-hover disabled:opacity-50"
+              className="rounded-lg bg-macos-red px-6 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
             >
-              移除
+              卸载
             </button>
           </div>
         </div>

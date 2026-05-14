@@ -23,7 +23,9 @@ export default {
           'accent-hover': '#409cff',
           selection: 'rgba(0,122,255,0.25)',
           green: '#30D158',
+          'green-hover': '#34d45c',
           red: '#FF453A',
+          'red-hover': '#ff5e54',
           orange: '#FF9F0A',
           // 图标背景色（SF Symbols 风格）
           'icon-blue': '#0A84FF',
