@@ -62,12 +62,14 @@ async function scanBrew() {
   const cachePath = join(home, 'Library/Caches/Homebrew');
   const cacheSize = await getDirSize(cachePath);
   if (cacheSize > 0) {
+    const children = await scanDirChildren(cachePath);
     items.push({
       name: 'Homebrew 下载缓存',
       path: cachePath,
       size: cacheSize,
       type: 'cache',
       safeToRemove: true,
+      children,
     });
     totalSize += cacheSize;
   }
@@ -123,14 +125,17 @@ async function scanNpm() {
 
     for (const v of versions) {
       if (v !== currentVersion) {
-        const vSize = await getDirSize(join(nvmPath, v));
+        const vPath = join(nvmPath, v);
+        const vSize = await getDirSize(vPath);
+        const children = await scanDirChildren(vPath);
         items.push({
           name: `Node.js ${v} (旧版本)`,
-          path: join(nvmPath, v),
+          path: vPath,
           size: vSize,
           type: 'cache',
           safeToRemove: false,
           description: `当前使用 ${currentVersion}`,
+          children,
         });
         totalSize += vSize;
       }
@@ -138,6 +143,10 @@ async function scanNpm() {
   } catch {
     /* nvm 未安装 */
   }
+
+  // npm cache children
+  const npmChildren = await scanDirChildren(npmCachePath);
+  items[0].children = npmChildren;
 
   return { items, totalSize };
 }
@@ -155,13 +164,16 @@ async function scanConda() {
     try {
       const envs = await readdir(envPath);
       for (const env of envs) {
-        const envSize = await getDirSize(join(envPath, env));
+        const fullEnvPath = join(envPath, env);
+        const envSize = await getDirSize(fullEnvPath);
+        const children = await scanDirChildren(fullEnvPath);
         items.push({
           name: `Conda: ${env}`,
-          path: join(envPath, env),
+          path: fullEnvPath,
           size: envSize,
           type: 'data',
           safeToRemove: false,
+          children,
         });
         totalSize += envSize;
       }
@@ -177,12 +189,14 @@ async function scanConda() {
   for (const pipPath of pipCachePaths) {
     const pipSize = await getDirSize(pipPath);
     if (pipSize > 0) {
+      const pipChildren = await scanDirChildren(pipPath);
       items.push({
         name: 'pip 缓存',
         path: pipPath,
         size: pipSize,
         type: 'cache',
         safeToRemove: true,
+        children: pipChildren,
       });
       totalSize += pipSize;
     }
@@ -208,12 +222,14 @@ async function scanSystemCache() {
         const dirPath = join(cachePath, dir);
         const dirSize = await getDirSize(dirPath);
         if (dirSize > 10 * 1024 * 1024) {
+          const children = await scanDirChildren(dirPath);
           items.push({
             name: dir,
             path: dirPath,
             size: dirSize,
             type: 'cache',
             safeToRemove: true,
+            children,
           });
           totalSize += dirSize;
         }
@@ -244,12 +260,14 @@ async function scanCliTools() {
   for (const [name, dirPath] of Object.entries(knownCliDirs)) {
     const size = await getDirSize(dirPath);
     if (size > 0) {
+      const children = await scanDirChildren(dirPath);
       items.push({
         name,
         path: dirPath,
         size,
         type: 'config',
         safeToRemove: false,
+        children,
       });
       totalSize += size;
     }
@@ -324,6 +342,31 @@ async function getDirSize(dirPath: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+/**
+ * Scan immediate children of a directory.
+ */
+async function scanDirChildren(dirPath: string): Promise<ScanItem[]> {
+  const children: ScanItem[] = [];
+  try {
+    const entries = await readdir(dirPath);
+    for (const entry of entries) {
+      const entryPath = join(dirPath, entry);
+      const entryStat = await stat(entryPath);
+      const isDir = entryStat.isDirectory();
+      const entrySize = isDir ? await getDirSize(entryPath) : entryStat.size;
+      children.push({
+        name: entry,
+        path: entryPath,
+        size: entrySize,
+        type: isDir ? 'data' : 'unknown',
+        safeToRemove: false,
+        modifiedAt: entryStat.mtimeMs,
+      });
+    }
+  } catch { /* no permission or not a directory */ }
+  return children;
 }
 
 export async function scanAllModules(): Promise<Record<ModuleId, ModuleScanResult>> {

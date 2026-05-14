@@ -6,7 +6,7 @@ import { useClean } from '@/hooks/useClean';
 import type { ScanItem } from '@/types';
 
 function NpmList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, selectedPaths, setSelectedItem, isSelected, toggleSelection } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection } = useAppStore();
   const { doSafeClean } = useClean();
   const result = scanResults['npm'];
 
