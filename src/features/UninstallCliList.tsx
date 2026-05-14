@@ -66,7 +66,7 @@ function UninstallCliList() {
           <h2 className="text-sm font-semibold">️ CLI 工具卸载</h2>
           <p className="text-xs text-macos-text-tertiary">{cliTools.length} 个工具</p>
         </div>
-        <button onClick={handleScan} disabled={isScanning} className="rounded bg-macos-accent px-2.5 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50">
+        <button onClick={handleScan} disabled={isScanning} className="rounded bg-macos-accent px-2 py-1 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50">
           {isScanning ? '扫描中...' : '重新扫描'}
         </button>
       </div>

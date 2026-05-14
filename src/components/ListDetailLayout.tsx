@@ -3,11 +3,10 @@ import { useAppStore } from '@/store';
 interface ListDetailLayoutProps {
   list: React.ReactNode;
   detail: React.ReactNode;
-  bottomBar?: React.ReactNode;
   listWidth?: string;
 }
 
-function ListDetailLayout({ list, detail, bottomBar, listWidth = 'w-[35%]' }: ListDetailLayoutProps) {
+function ListDetailLayout({ list, detail, listWidth = 'w-[35%]' }: ListDetailLayoutProps) {
   const { selectedItem } = useAppStore();
 
   return (
@@ -24,7 +23,6 @@ function ListDetailLayout({ list, detail, bottomBar, listWidth = 'w-[35%]' }: Li
         <div className="flex-1 overflow-y-auto">
           {selectedItem ? detail : <EmptyDetail />}
         </div>
-        {bottomBar && selectedItem && bottomBar}
       </div>
     </div>
   );

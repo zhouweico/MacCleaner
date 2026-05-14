@@ -63,7 +63,7 @@ function DockerList() {
           <h2 className="text-sm font-semibold">🐳 Docker</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
         </div>
-        <button onClick={handleClean} className="rounded bg-macos-green px-2.5 py-1.5 text-xs font-medium hover:bg-macos-green-hover">⚡ 安全清理</button>
+        <button onClick={handleClean} className="rounded bg-macos-green px-2 py-1 text-xs font-medium hover:bg-macos-green-hover">清理</button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3">
         {result.items.length > 0 ? (
@@ -147,7 +147,7 @@ export function DockerDetail() {
       </div>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
         <button onClick={() => {}} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green-hover">
-          安全清理
+          清理
         </button>
       </div>
     </div>

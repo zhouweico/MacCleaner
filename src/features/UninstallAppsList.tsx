@@ -184,7 +184,7 @@ function UninstallAppsList() {
         <button
           onClick={handleScan}
           disabled={scanning}
-          className="rounded bg-macos-accent px-2.5 py-1.5 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50"
+          className="rounded bg-macos-accent px-2 py-1 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50"
         >
           {scanning ? '扫描中...' : '重新扫描'}
         </button>
@@ -356,7 +356,7 @@ export function UninstallAppsDetail() {
             <button
               onClick={handleUninstall}
               disabled={selectedCount === 0}
-              className="rounded-lg bg-macos-red px-6 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
+              className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
             >
               卸载
             </button>

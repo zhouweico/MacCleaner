@@ -59,7 +59,7 @@ function CondaList() {
           <h2 className="text-sm font-semibold">🐍 Conda 环境</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
         </div>
-        <button onClick={handleClean} className="rounded bg-macos-green px-2.5 py-1.5 text-xs font-medium hover:bg-macos-green-hover">清理缓存</button>
+        <button onClick={handleClean} className="rounded bg-macos-green px-2 py-1 text-xs font-medium hover:bg-macos-green-hover">清理缓存</button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3">
         {result.items.length > 0 ? (
