@@ -83,7 +83,11 @@ function SelectionCard({ item }: { item: SelectionItem }) {
             style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
             title="在访达中打开"
           >
-            <span className="text-sm text-macos-text-tertiary">↗</span>
+            <svg className="w-3.5 h-3.5 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
           </button>
           <span className="text-xs text-macos-text-tertiary">{formatBytes(item.size ?? 0)}</span>
         </div>
@@ -113,7 +117,11 @@ function SelectionCard({ item }: { item: SelectionItem }) {
             style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
             title="在访达中打开"
           >
-            <span className="text-sm text-macos-text-tertiary">↗</span>
+            <svg className="w-3.5 h-3.5 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
           </button>
           <span className="text-xs text-macos-text-tertiary">{children.length} 项 · {formatBytes(item.size ?? childSize)}</span>
         </div>
