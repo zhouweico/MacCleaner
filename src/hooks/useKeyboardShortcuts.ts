@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '@/store';
 import type { ModuleId } from '@/types';
 
@@ -31,35 +31,25 @@ function matchShortcut(e: KeyboardEvent, shortcut: string): boolean {
   return true;
 }
 
-function getEnabled(): Record<string, boolean> {
+function isShortcutEnabled(key: string): boolean {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      return s.shortcutEnabled ?? { selectAll: true, rescan: true };
+      return s.shortcutEnabled?.[key] !== false;
     }
   } catch {}
-  return { selectAll: true, rescan: true };
+  return true;
 }
 
 export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) {
   const { isSelected, selectAll, clearSelection } = useAppStore();
-  const enabledRef = useRef(getEnabled());
 
   const shortcuts = { ...DEFAULT_SHORTCUTS, ...customShortcuts };
 
-  // Keep enabledRef in sync with settings changes
-  useEffect(() => {
-    function onSettingsChange() {
-      enabledRef.current = getEnabled();
-    }
-    window.addEventListener('settings-changed', onSettingsChange);
-    return () => window.removeEventListener('settings-changed', onSettingsChange);
-  }, []);
-
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (matchShortcut(e, shortcuts.selectAll) && enabledRef.current.selectAll !== false) {
+      if (matchShortcut(e, shortcuts.selectAll) && isShortcutEnabled('selectAll')) {
         e.preventDefault();
         const state = useAppStore.getState();
         const currentModule = state.currentModule;
@@ -89,14 +79,14 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
       }
     }
 
-    // Listen for rescan shortcut from main process via DOM event
-    const handleRescanShortcut = () => {
-      if (enabledRef.current.rescan !== false) {
+    // Main process intercepts Cmd+R and dispatches this DOM event
+    function handleRescanShortcut() {
+      if (isShortcutEnabled('rescan')) {
         clearSelection();
         const currentModule = useAppStore.getState().currentModule;
         window.dispatchEvent(new CustomEvent('rescan-module', { detail: { moduleId: currentModule } }));
       }
-    };
+    }
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('rescan-shortcut', handleRescanShortcut);

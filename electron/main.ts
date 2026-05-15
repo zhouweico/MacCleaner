@@ -82,7 +82,7 @@ function createWindow() {
   mainWindow.loadURL('http://localhost:5173');
   mainWindow.webContents.openDevTools();
 
-  // Intercept Cmd+R to trigger rescan via IPC (Electron default menu consumes it otherwise)
+  // Intercept Cmd+R: always prevent default refresh, dispatch DOM event for renderer to handle
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key.toLowerCase() === 'r' && input.meta && !input.shift) {
       event.preventDefault();
