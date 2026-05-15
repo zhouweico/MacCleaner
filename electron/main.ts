@@ -90,6 +90,13 @@ app.whenReady().then(() => {
   registerCleanHandlers();
   registerUninstallHandlers();
   registerScheduleHandlers(mainWindow!);
+
+  // Block Cmd+R (page reload), keep Cmd+Shift+R (Force Reload) for dev
+  mainWindow!.webContents.on('before-input-event', (event, input) => {
+    if (input.key.toLowerCase() === 'r' && input.meta && !input.shift) {
+      event.preventDefault();
+    }
+  });
 });
 
 app.on('window-all-closed', () => {

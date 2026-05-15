@@ -192,7 +192,7 @@ function SettingsView() {
                   <div className="text-xs text-macos-text-tertiary">{desc}</div>
                 </div>
                 <div className="flex items-center gap-4 py-2.5">
-                  <span className="text-sm font-medium text-macos-text-tertiary">
+                  <span className="text-sm font-medium text-macos-text-primary">
                     {formatShortcutKey(currentVal)}
                   </span>
                   <ToggleSwitch checked={enabled} onChange={() => toggleShortcut(key)} />
