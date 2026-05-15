@@ -161,7 +161,7 @@ function DownloadsList() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate text-macos-text-primary">{item.name}</div>
-                    {hasChildren && <div className="text-xs text-macos-text-tertiary">{item.children!.length} 项</div>}
+                    <div className="text-xs text-macos-text-tertiary">{hasChildren ? `${item.children!.length} 项` : '1 项'}</div>
                   </div>
                   <div className="w-[56px] text-right text-xs text-macos-text-secondary">{formatBytes(item.size)}</div>
                   <div className="w-[72px] text-right text-xs text-macos-text-tertiary">{item.modifiedAt ? formatDate(item.modifiedAt) : '-'}</div>
