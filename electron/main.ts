@@ -90,14 +90,6 @@ app.whenReady().then(() => {
   registerCleanHandlers();
   registerUninstallHandlers();
   registerScheduleHandlers(mainWindow!);
-
-  // Allow Cmd+R to reach renderer for our rescan shortcut.
-  // Block Cmd+Shift+R (Force Reload) since we don't need page refresh in prod.
-  mainWindow!.webContents.on('before-input-event', (event, input) => {
-    if (input.key.toLowerCase() === 'r' && input.meta && input.shift) {
-      event.preventDefault();
-    }
-  });
 });
 
 app.on('window-all-closed', () => {
