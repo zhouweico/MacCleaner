@@ -1,6 +1,7 @@
 import { useAppStore, navItems, buildSearchResults, groupSearchResults } from '@/store';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { formatBytes } from '@/lib/format';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 const groupLabels: Record<string, string> = {
   clean: '清理',
@@ -152,7 +153,7 @@ function Sidebar() {
       </div>
 
       {/* Menu / Search Results */}
-      <nav className="flex-1 overflow-y-auto px-2 pb-3">
+      <AutoHideScroll as="nav" className="flex-1 px-2 pb-3">
         {isSearching ? (
           // 搜索结果视图
           searchGroups.length > 0 ? (
@@ -234,7 +235,7 @@ function Sidebar() {
               });
           })()
         )}
-      </nav>
+      </AutoHideScroll>
       </div>
     </div>
   );

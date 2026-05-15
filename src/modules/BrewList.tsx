@@ -7,6 +7,7 @@ import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 import SelectionSummary from '@/components/SelectionSummary';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 function BrewList() {
   const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
@@ -58,7 +59,7 @@ function BrewList() {
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <AutoHideScroll className="flex-1 px-3 py-3">
         {result.items.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {result.items.map((item, i) => {
@@ -93,7 +94,7 @@ function BrewList() {
         ) : (
           <p className="p-4 text-macos-text-tertiary">没有可清理的旧版本</p>
         )}
-      </div>
+      </AutoHideScroll>
     </div>
   );
 }
@@ -148,7 +149,7 @@ export function BrewDetail() {
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <AutoHideScroll className="flex-1 px-4 py-3">
         <CollapsibleFileSection
           title="文件列表"
           files={item.children?.map(c => ({ name: (c as unknown as ScanItem).name, path: (c as unknown as ScanItem).path, size: (c as unknown as ScanItem).size, isDir: (c as unknown as ScanItem).type === 'data' })) ?? []}
@@ -162,7 +163,7 @@ export function BrewDetail() {
             <div className="flex justify-between"><span className="text-macos-text-secondary">安全清理</span><span className={item.safeToRemove ? 'text-green-400' : 'text-orange-400'}>{item.safeToRemove ? '是' : '否'}</span></div>
           </div>
         )}
-      </div>
+      </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>

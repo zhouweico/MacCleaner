@@ -4,6 +4,7 @@ import { uninstallCliTool } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import SelectionSummary from '@/components/SelectionSummary';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 type CliTool = AppState['cliTools'][number];
 
@@ -65,7 +66,7 @@ function UninstallCliList() {
           <p className="text-xs text-macos-text-tertiary">{cliTools.length} 个工具</p>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <AutoHideScroll className="flex-1 px-3 py-3">
         {cliTools.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {cliTools.map((tool, i) => {
@@ -101,7 +102,7 @@ function UninstallCliList() {
         ) : (
           <p className="p-4 text-macos-text-tertiary">{isScanning ? '扫描中...' : '没有检测到 CLI 工具'}</p>
         )}
-      </div>
+      </AutoHideScroll>
     </div>
   );
 }
@@ -176,7 +177,7 @@ export function UninstallCliDetail() {
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <AutoHideScroll className="flex-1 px-4 py-3">
         <div className="space-y-2 text-sm">
           {tool.path && (
             <div className="flex justify-between"><span className="text-macos-text-secondary">路径</span><span className="text-macos-text-tertiary text-xs break-all text-right ml-4">{tool.path}</span></div>
@@ -184,7 +185,7 @@ export function UninstallCliDetail() {
           <div className="flex justify-between"><span className="text-macos-text-secondary">版本</span><span>{tool.version}</span></div>
           <div className="flex justify-between"><span className="text-macos-text-secondary">来源</span><span>{tool.source}</span></div>
         </div>
-      </div>
+      </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { registerSchedule } from '@/lib/ipc';
 import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 const STORAGE_KEY = 'maccleaner-settings';
 
@@ -102,7 +103,7 @@ function SettingsView() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
+    <AutoHideScroll className="flex h-full flex-col">
       {/* Header */}
       <div className="mb-4">
         <h1 className="text-lg font-bold">⚙️ 设置</h1>
@@ -208,9 +209,4 @@ function SettingsView() {
         >
           {saved ? '已保存 ✓' : '保存设置'}
         </button>
-      </div>
-    </div>
-  );
-}
-
-export default SettingsView;
+    </AutoHideScroll>

@@ -28,6 +28,35 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* 自动隐藏滚动条 — overlay 模式，不占布局宽度 */
+.autohide-scrollbar {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.autohide-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.autohide-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.autohide-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.autohide-scrollbar.scrollbar-visible::-webkit-scrollbar-thumb,
+.autohide-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.autohide-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
 /* macOS 原生 checkbox */
 input[type="checkbox"] {
   appearance: none;

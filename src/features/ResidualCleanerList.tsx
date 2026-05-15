@@ -5,6 +5,7 @@ import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, CleanAction } from '@/types';
 import SelectionSummary from '@/components/SelectionSummary';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 function ResidualCleanerList() {
   const { residuals, setResiduals, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
@@ -58,7 +59,7 @@ function ResidualCleanerList() {
         </div>
       </div>
       <p className="px-4 py-2 text-xs text-macos-text-tertiary">以下文件属于已卸载 APP 的残留</p>
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <AutoHideScroll className="flex-1 px-3 py-3">
         {residuals.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {residuals.map((res, i) => {
@@ -94,7 +95,7 @@ function ResidualCleanerList() {
         ) : (
           <p className="p-4 text-macos-text-tertiary">没有检测到残留文件</p>
         )}
-      </div>
+      </AutoHideScroll>
     </div>
   );
 }
@@ -159,7 +160,7 @@ export function ResidualCleanerDetail() {
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <AutoHideScroll className="flex-1 px-4 py-3">
         <div className="space-y-1 text-xs">
           {residual.associatedFiles.map((f, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-macos-separator">
@@ -168,7 +169,7 @@ export function ResidualCleanerDetail() {
             </div>
           ))}
         </div>
-      </div>
+      </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>

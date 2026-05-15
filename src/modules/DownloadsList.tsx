@@ -6,6 +6,7 @@ import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 import SelectionSummary from '@/components/SelectionSummary';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 async function moveToTrash(paths: string[]) {
   for (const p of paths) {
@@ -114,7 +115,7 @@ function DownloadsList() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <AutoHideScroll className="flex-1 px-3 py-3">
         {sortedItems.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {/* Table header */}
@@ -172,7 +173,7 @@ function DownloadsList() {
         ) : (
           <p className="p-4 text-macos-text-tertiary">Downloads 目录为空</p>
         )}
-      </div>
+      </AutoHideScroll>
     </div>
   );
 }
@@ -238,13 +239,13 @@ export function DownloadsDetail() {
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <AutoHideScroll className="flex-1 px-4 py-3">
           <div className="space-y-2 text-sm">
             {item.modifiedAt && (
               <div className="flex justify-between"><span className="text-macos-text-secondary">修改时间</span><span>{formatDate(item.modifiedAt)}</span></div>
             )}
           </div>
-        </div>
+        </AutoHideScroll>
         <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
             <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
@@ -277,7 +278,7 @@ export function DownloadsDetail() {
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <AutoHideScroll className="flex-1 px-4 py-3">
         <CollapsibleFileSection
           title="文件列表"
           files={item.children.map(c => ({
@@ -288,7 +289,7 @@ export function DownloadsDetail() {
           }))}
           defaultExpanded
         />
-      </div>
+      </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>

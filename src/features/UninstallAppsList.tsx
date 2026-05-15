@@ -6,6 +6,7 @@ import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, AssociatedFile } from '@/types';
 import SelectionSummary from '@/components/SelectionSummary';
 import FinderIcon from '@/components/FinderIcon';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 // 按类型分组文件
 function groupFilesByType(files: AssociatedFile[]) {
@@ -181,7 +182,7 @@ function UninstallAppsList() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <AutoHideScroll className="flex-1 px-3 py-3">
         {apps.length > 0 ? (
           <div className="bg-macos-surface/50 rounded-xl overflow-hidden">
             {apps.map((app, i) => {
@@ -225,7 +226,7 @@ function UninstallAppsList() {
         ) : (
           <p className="py-8 text-center text-macos-text-tertiary">{scanning ? '扫描中...' : '没有检测到 APP'}</p>
         )}
-      </div>
+      </AutoHideScroll>
     </div>
   );
 }
@@ -366,7 +367,7 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
       </div>
 
       {/* File groups */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <AutoHideScroll className="flex-1 px-4 py-3">
         <CollapsibleSection
           title="可执行文件"
           files={[{ path: app.path, type: 'binary' as any, size: app.size }]}
@@ -385,7 +386,7 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
             defaultExpanded={groupName === '应用程序支持'}
           />
         ))}
-      </div>
+      </AutoHideScroll>
 
       {/* Bottom action bar */}
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">

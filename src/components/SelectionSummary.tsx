@@ -3,6 +3,7 @@ import { formatBytes } from '@/lib/format';
 import { showItemInFolder } from '@/lib/ipc';
 import { useState } from 'react';
 import FinderIcon from '@/components/FinderIcon';
+import AutoHideScroll from '@/components/AutoHideScroll';
 
 interface SelectionSummaryProps {
   moduleName: string;
@@ -37,13 +38,11 @@ export default function SelectionSummary({ moduleIcon, items, onClean, cleanLabe
       </div>
 
       {/* Card list */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <AutoHideScroll className="flex-1 px-4 py-3">
         {items.map((item) => (
           <SelectionCard key={item.path} item={item} />
         ))}
-      </div>
-
-      {/* Footer */}
+      </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{formatBytes(totalSize)}</span> <span className="text-macos-text-tertiary">总计</span></span>
