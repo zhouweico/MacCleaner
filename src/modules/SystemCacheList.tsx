@@ -5,6 +5,7 @@ import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem, CleanAction } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
+import SelectionSummary from '@/components/SelectionSummary';
 
 function SystemCacheList() {
   const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
@@ -121,21 +122,16 @@ export function SystemCacheDetail() {
   }
 
   if (!selectedItem && selectedPaths.size > 0) {
+    const items = result!.items
+      .filter(i => selectedPaths.has(i.path))
+      .map(i => ({ name: i.name, path: i.path, size: i.size, children: (i as any).children }));
     return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
-        </div>
-        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
-          <p>已勾选的项目将批量清理</p>
-        </div>
-        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
-          </div>
-          <button onClick={handleClean} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green-hover">清理</button>
-        </div>
-      </div>
+      <SelectionSummary
+        moduleName="系统缓存"
+        moduleIcon="🗂️"
+        items={items}
+        onClean={handleClean}
+      />
     );
   }
 

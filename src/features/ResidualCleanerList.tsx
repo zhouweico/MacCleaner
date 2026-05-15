@@ -4,6 +4,7 @@ import { scanResidual, advancedClean } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, CleanAction } from '@/types';
+import SelectionSummary from '@/components/SelectionSummary';
 
 function ResidualCleanerList() {
   const { residuals, setResiduals, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
@@ -122,21 +123,20 @@ export function ResidualCleanerDetail() {
   }
 
   if (!selectedItem && selectedPaths.size > 0) {
+    const items = residuals.filter(r => selectedPaths.has(r.path)).map(r => ({
+      name: r.name,
+      path: r.path,
+      size: r.associatedFiles.reduce((s, f) => s + f.size, 0),
+      children: r.associatedFiles.map(f => ({ name: f.path.split('/').pop() ?? f.path, path: f.path, size: f.size })),
+    }));
+
     return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
-        </div>
-        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
-          <p>已勾选的残留文件将批量清理</p>
-        </div>
-        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
-          </div>
-          <button onClick={handleClean} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green-hover">清理</button>
-        </div>
-      </div>
+      <SelectionSummary
+        moduleName="残留文件"
+        moduleIcon="🗑️"
+        items={items}
+        onClean={handleClean}
+      />
     );
   }
 

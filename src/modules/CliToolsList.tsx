@@ -5,6 +5,7 @@ import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
+import SelectionSummary from '@/components/SelectionSummary';
 
 async function moveToTrash(paths: string[]) {
   for (const p of paths) {
@@ -114,7 +115,8 @@ function CliToolsList() {
 }
 
 export function CliToolsDetail() {
-  const { selectedItem, selectedPaths, clearSelection, setScanning, setScanResults } = useAppStore();
+  const { selectedItem, selectedPaths, scanResults, clearSelection, setScanning, setScanResults } = useAppStore();
+  const result = scanResults['cli-tools'];
 
   async function handleClean() {
     if (selectedPaths.size === 0) return;
@@ -137,21 +139,15 @@ export function CliToolsDetail() {
   }
 
   if (!selectedItem && selectedPaths.size > 0) {
+    const items = (result?.items ?? []).filter(i => selectedPaths.has(i.path)).map(i => ({ name: i.name, path: i.path, size: i.size, children: i.children }));
     return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
-        </div>
-        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
-          <p>已勾选的项目将批量移至废纸篓</p>
-        </div>
-        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
-          </div>
-          <button onClick={handleClean} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover">移至废纸篓</button>
-        </div>
-      </div>
+      <SelectionSummary
+        moduleName="CLI 工具"
+        moduleIcon="🛠️"
+        items={items}
+        onClean={handleClean}
+        cleanLabel="移至废纸篓"
+      />
     );
   }
 

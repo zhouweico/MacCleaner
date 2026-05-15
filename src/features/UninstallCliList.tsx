@@ -3,6 +3,7 @@ import { useAppStore, type AppState, type SelectedItem } from '@/store';
 import { uninstallCliTool } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
+import SelectionSummary from '@/components/SelectionSummary';
 
 type CliTool = AppState['cliTools'][number];
 
@@ -138,23 +139,20 @@ export function UninstallCliDetail() {
   }
 
   if (!selectedItem && selectedPaths.size > 0) {
+    const items = cliTools.filter(t => selectedPaths.has(t.path || `${t.source}:${t.name}`)).map(t => ({
+      name: `${t.name} (${t.source})`,
+      path: t.path || `${t.source}:${t.name}`,
+      size: t.size,
+    }));
+
     return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
-        </div>
-        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
-          <p>已勾选的 CLI 工具将批量卸载</p>
-        </div>
-        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
-          </div>
-          <button onClick={handleUninstall} disabled={uninstalling} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50">
-            {uninstalling ? '卸载中...' : '卸载'}
-          </button>
-        </div>
-      </div>
+      <SelectionSummary
+        moduleName="CLI 工具卸载"
+        moduleIcon="🛠️"
+        items={items}
+        onClean={handleUninstall}
+        cleanLabel={uninstalling ? '卸载中...' : '卸载'}
+      />
     );
   }
 

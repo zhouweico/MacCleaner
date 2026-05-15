@@ -4,6 +4,7 @@ import { scanApps, scanAppAssociated, uninstallApp, showItemInFolder, getFinderI
 import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, AssociatedFile } from '@/types';
+import SelectionSummary from '@/components/SelectionSummary';
 
 // Cache finder icon globally
 let finderIconCache: string | null = null;
@@ -287,21 +288,21 @@ export function UninstallAppsDetail() {
       }
     }
 
+    const items = apps.filter(a => selectedPaths.has(a.path)).map(a => ({
+      name: a.name,
+      path: a.path,
+      size: a.size + a.associatedFiles.reduce((s, f) => s + f.size, 0),
+      children: a.associatedFiles.map(f => ({ name: f.path.split('/').pop() ?? f.path, path: f.path, size: f.size })),
+    }));
+
     return (
-      <div className="flex h-full flex-col">
-        <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
-        </div>
-        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
-          <p>已勾选的应用将批量卸载</p>
-        </div>
-        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
-          </div>
-          <button onClick={handleBatchUninstall} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover">卸载</button>
-        </div>
-      </div>
+      <SelectionSummary
+        moduleName="应用程序"
+        moduleIcon="📱"
+        items={items}
+        onClean={handleBatchUninstall}
+        cleanLabel="卸载"
+      />
     );
   }
 
