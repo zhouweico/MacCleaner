@@ -34,6 +34,12 @@ function formatShortcutDisplay(shortcut: string): string {
     .replace(/\+/g, '');
 }
 
+function formatShortcutKey(shortcut: string): string {
+  const formatted = formatShortcutDisplay(shortcut);
+  // Only uppercase the key letter (last char), keep symbols as-is
+  return formatted.slice(0, -1) + formatted.slice(-1).toUpperCase();
+}
+
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -206,24 +212,23 @@ function SettingsView() {
                   <div className="text-sm font-medium">{label}</div>
                   <div className="text-xs text-macos-text-tertiary">{desc}</div>
                 </div>
-                <div className="flex items-center gap-3 py-2.5">
+                <div className="flex items-center gap-4 py-2.5">
                   {isEditing ? (
-                    <div
+                    <button
                       tabIndex={0}
                       onKeyDown={(e) => handleShortcutKeyDown(e, key)}
                       onBlur={() => setEditingKey(null)}
-                      className="rounded bg-macos-content px-3 py-1 text-xs text-macos-accent border border-macos-accent focus:outline-none min-w-[80px] text-center"
+                      className="text-lg font-medium text-macos-accent focus:outline-none min-w-[80px] text-left"
                       autoFocus
                     >
                       按下组合键...
-                    </div>
+                    </button>
                   ) : (
                     <button
-                      onClick={() => enabled && handleShortcutEdit(key)}
-                      disabled={!enabled}
-                      className={`rounded px-3 py-1 text-xs border transition-colors ${enabled ? 'bg-macos-content text-macos-text-primary border-macos-separator hover:border-macos-accent cursor-pointer' : 'text-macos-text-tertiary border-transparent cursor-default'}`}
+                      onClick={() => handleShortcutEdit(key)}
+                      className="text-lg font-medium text-macos-text-primary hover:text-macos-accent transition-colors"
                     >
-                      {enabled ? formatShortcutDisplay(currentVal) : '关闭'}
+                      {formatShortcutKey(currentVal)}
                     </button>
                   )}
                   <ToggleSwitch checked={enabled} onChange={() => toggleShortcut(key)} />
