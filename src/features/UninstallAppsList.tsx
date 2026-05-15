@@ -150,6 +150,7 @@ function UninstallAppsList() {
     setScanningState(true);
     setScanning(true);
     setApps([]);
+    setSelectedItem(null);
     clearSelection();
     try {
       const result = await scanApps();
@@ -295,6 +296,10 @@ export function UninstallAppsDetail() {
   }
 
   const app = selectedItem as unknown as AppInfo;
+  if (!app || !app.associatedFiles) {
+    return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
+  }
+
   const totalSize = app.size + app.associatedFiles.reduce((s, f) => s + f.size, 0);
   const fileGroups = groupFilesByType(app.associatedFiles);
 
