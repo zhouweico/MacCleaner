@@ -125,7 +125,7 @@ export function DockerDetail() {
   if (!selectedItem && selectedPaths.size > 0) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-macos-separator px-4 py-4">
+        <div className="border-b border-macos-separator px-4 py-3">
           <div className="text-lg font-bold">已选 {selectedPaths.size} 项</div>
         </div>
         <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
@@ -145,7 +145,7 @@ export function DockerDetail() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-macos-separator px-4 py-4">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl shrink-0">{icons[item.type ?? ''] ?? '🐳'}</div>
