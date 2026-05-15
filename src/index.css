@@ -28,14 +28,14 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* 自动隐藏滚动条 — overlay 模式，不占布局宽度 */
+/* 自动隐藏滚动条 — 始终预留轨道空间，避免内容伸缩抖动 */
 .autohide-scrollbar {
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
 }
 
 .autohide-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 
 .autohide-scrollbar::-webkit-scrollbar-track {
@@ -99,16 +99,16 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* 窗口拖动区域 - 整个应用可拖动 */
-.app-container {
+/* 窗口拖动区域 — 仅顶部可拖动 */
+.window-drag-region {
   -webkit-app-region: drag;
 }
 
 /* 交互元素不可拖动 */
-.app-container button,
-.app-container input,
-.app-container a,
-.app-container [role="button"],
-.app-container [class*="cursor-"] {
+.window-drag-region button,
+.window-drag-region input,
+.window-drag-region a,
+.window-drag-region [role="button"],
+.window-drag-region [class*="cursor-"] {
   -webkit-app-region: no-drag;
 }

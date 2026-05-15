@@ -7,7 +7,9 @@ function App() {
   useKeyboardShortcuts();
 
   return (
-    <div className="app-container flex h-screen w-screen bg-macos-bg text-macos-text-primary">
+    <div className="flex h-screen w-screen bg-macos-bg text-macos-text-primary">
+      {/* 顶部拖动条 */}
+      <div className="window-drag-region fixed top-0 left-0 right-0 h-10 z-50" />
       <Sidebar />
       <ErrorBoundary>
         <LayoutWrapper />

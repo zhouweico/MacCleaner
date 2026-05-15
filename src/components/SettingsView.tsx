@@ -209,4 +209,9 @@ function SettingsView() {
         >
           {saved ? '已保存 ✓' : '保存设置'}
         </button>
+      </div>
     </AutoHideScroll>
+  );
+}
+
+export default SettingsView;
