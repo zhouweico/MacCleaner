@@ -21,6 +21,60 @@ interface CollapsibleFileSectionProps {
 // Cache finder icon globally
 let finderIconCache: string | null = null;
 
+interface FileEntry {
+  name: string;
+  path: string;
+  size: number;
+  isDir?: boolean;
+}
+
+function FileRow({ file, showCheckbox, checkedFiles, onToggleFile, iconSrc }: {
+  file: FileEntry;
+  showCheckbox: boolean;
+  checkedFiles: Set<string>;
+  onToggleFile?: (path: string, checked: boolean) => void;
+  iconSrc: string | null;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="flex items-center gap-2 px-4 py-2 text-xs cursor-default"
+      style={{ backgroundColor: hovered ? '#3d3d3d' : undefined }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {showCheckbox && onToggleFile && (
+        <input
+          type="checkbox"
+          checked={checkedFiles.has(file.path)}
+          onChange={(e) => onToggleFile(file.path, e.target.checked)}
+          className="rounded shrink-0"
+        />
+      )}
+      <span className="text-macos-text-tertiary shrink-0">{file.isDir ? '📁' : '📄'}</span>
+      <span className="text-macos-text-primary truncate flex-1 min-w-0">{file.path}</span>
+      <button
+        onClick={() => showItemInFolder(file.path)}
+        className="shrink-0 p-0 rounded hover:bg-macos-surface-hover"
+        style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
+        title="在访达中打开"
+      >
+        {iconSrc ? (
+          <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        )}
+      </button>
+      <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(file.size)}</span>
+    </div>
+  );
+}
+
 export default function CollapsibleFileSection({
   title,
   files,
@@ -44,10 +98,6 @@ export default function CollapsibleFileSection({
   }, []);
 
   if (files.length === 0) return null;
-
-  async function handleOpenFinder(path: string) {
-    await showItemInFolder(path);
-  }
 
   const iconSrc = finderIcon || finderIconCache;
 
@@ -79,34 +129,7 @@ export default function CollapsibleFileSection({
       {expanded && (
         <div className="border-t border-macos-separator">
           {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-macos-surface-hover text-xs group">
-              {showCheckbox && onToggleFile && (
-                <input
-                  type="checkbox"
-                  checked={checkedFiles.has(f.path)}
-                  onChange={(e) => onToggleFile(f.path, e.target.checked)}
-                  className="rounded shrink-0"
-                />
-              )}
-              <span className="text-macos-text-tertiary shrink-0">{f.isDir ? '📁' : '📄'}</span>
-              <span className="text-macos-text-primary truncate flex-1 min-w-0">{f.path}</span>
-              <button
-                onClick={() => handleOpenFinder(f.path)}
-                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0 rounded hover:bg-macos-surface-hover"
-                title="在访达中打开"
-              >
-                {iconSrc ? (
-                  <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                )}
-              </button>
-              <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(f.size)}</span>
-            </div>
+            <FileRow key={i} file={f} showCheckbox={showCheckbox} checkedFiles={checkedFiles} onToggleFile={onToggleFile} iconSrc={iconSrc} />
           ))}
         </div>
       )}
