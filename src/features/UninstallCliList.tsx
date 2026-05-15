@@ -5,12 +5,6 @@ import { formatBytes } from '@/lib/format';
 
 type CliTool = AppState['cliTools'][number];
 
-const sourceColors: Record<string, string> = {
-  brew: 'bg-orange-500/20 text-orange-400',
-  npm: 'bg-red-500/20 text-red-400',
-  pip: 'bg-blue-500/20 text-blue-400',
-};
-
 function UninstallCliList() {
   const { cliTools, setCliTools, selectedItem, setSelectedItem, toggleSelection, isSelected, isScanning, setScanning, searchTargetPath } = useAppStore();
   const lastAutoSelectPath = useRef('');
@@ -96,10 +90,7 @@ function UninstallCliList() {
                   <div className="w-8 h-8 rounded-lg macos-icon-indigo flex items-center justify-center text-sm shrink-0">🖥️</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate text-macos-text-primary">{tool.name}</div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
-                      <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
-                    </div>
+                    <div className="text-xs text-macos-text-tertiary">{tool.source} v{tool.version}</div>
                   </div>
                   {tool.size && <div className="text-xs text-macos-text-secondary shrink-0">{formatBytes(tool.size)}</div>}
                 </div>
@@ -178,12 +169,8 @@ export function UninstallCliDetail() {
             <div className="w-8 h-8 rounded-lg macos-icon-indigo flex items-center justify-center text-sm shrink-0">️</div>
             <div>
               <h2 className="text-sm font-bold">{tool.name}</h2>
-              <div className="flex items-center gap-2">
-                <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
-                <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
-              </div>
-            </div>
-          </div>
+              <p className="text-xs text-macos-text-tertiary">{tool.source} v{tool.version}</p>
+          )}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3">
