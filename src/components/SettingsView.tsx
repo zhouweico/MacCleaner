@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { registerSchedule } from '@/lib/ipc';
-import { DEFAULT_SHORTCUTS, type ShortcutConfig } from '@/hooks/useKeyboardShortcuts';
+import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 
 const STORAGE_KEY = 'maccleaner-settings';
 
@@ -9,7 +9,6 @@ interface SavedSettings {
   scheduleEnabled: boolean;
   aiEnabled: boolean;
   ollamaUrl: string;
-  shortcuts?: Partial<ShortcutConfig>;
   shortcutEnabled?: Record<string, boolean>;
 }
 
@@ -18,7 +17,7 @@ function loadSettings(): SavedSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434', shortcuts: {}, shortcutEnabled: {} };
+  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434', shortcutEnabled: {} };
 }
 
 function saveSettings(settings: SavedSettings) {
@@ -66,7 +65,6 @@ function SettingsView() {
   const [aiEnabled, setAiEnabled] = useState(() => loadSettings().aiEnabled);
   const [ollamaUrl, setOllamaUrl] = useState(() => loadSettings().ollamaUrl);
   const [saved, setSaved] = useState(false);
-  const [shortcuts] = useState<Partial<ShortcutConfig>>(() => loadSettings().shortcuts || {});
   const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
     const s = loadSettings();
     return s.shortcutEnabled ?? { selectAll: true, rescan: true };
@@ -82,7 +80,7 @@ function SettingsView() {
   }, []);
 
   async function handleSave() {
-    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl, shortcuts, shortcutEnabled });
+    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl, shortcutEnabled });
     if (scheduleEnabled) {
       const [hour, minute] = scanTime.split(':');
       await registerSchedule(`${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`);
@@ -183,7 +181,6 @@ function SettingsView() {
             const label = key === 'selectAll' ? '全选' : '重新扫描';
             const desc = key === 'selectAll' ? '选中/取消选中当前模块所有项目' : '重新扫描当前模块';
             const defaultVal = DEFAULT_SHORTCUTS[key];
-            const currentVal = shortcuts[key] ?? defaultVal;
             const enabled = shortcutEnabled[key] !== false;
             return (
               <div key={key} className={`flex items-center justify-between ${idx === 0 ? '' : 'border-t border-macos-separator'}`}>
@@ -193,7 +190,7 @@ function SettingsView() {
                 </div>
                 <div className="flex items-center gap-4 py-2.5">
                   <span className="text-sm font-medium text-macos-text-primary">
-                    {formatShortcutKey(currentVal)}
+                    {formatShortcutKey(defaultVal)}
                   </span>
                   <ToggleSwitch checked={enabled} onChange={() => toggleShortcut(key)} />
                 </div>

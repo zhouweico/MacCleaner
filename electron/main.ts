@@ -82,11 +82,24 @@ function createWindow() {
   mainWindow.loadURL('http://localhost:5173');
   mainWindow.webContents.openDevTools();
 
-  // Intercept Cmd+R: always prevent default refresh, dispatch DOM event for renderer to handle
+  // Intercept Cmd+R: check renderer switch. If disabled, block refresh (no-op). If enabled, let it reload.
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key.toLowerCase() === 'r' && input.meta && !input.shift) {
+      // Always prevent default first, then decide
       event.preventDefault();
-      mainWindow?.webContents.executeJavaScript('window.dispatchEvent(new CustomEvent("rescan-shortcut"))');
+      mainWindow?.webContents.executeJavaScript(`
+        (() => {
+          try {
+            const s = JSON.parse(localStorage.getItem('maccleaner-settings') || '{}');
+            return s.shortcutEnabled?.rescan !== false;
+          } catch { return true; }
+        })()
+      `).then((enabled) => {
+        if (enabled) {
+          mainWindow?.webContents.reload();
+        }
+        // else: disabled, do nothing (block refresh)
+      });
     }
   });
 }

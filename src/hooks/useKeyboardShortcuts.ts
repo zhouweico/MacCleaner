@@ -2,14 +2,7 @@ import { useEffect } from 'react';
 import { useAppStore } from '@/store';
 import type { ModuleId } from '@/types';
 
-const STORAGE_KEY = 'maccleaner-settings';
-
-interface ShortcutConfig {
-  selectAll: string;
-  rescan: string;
-}
-
-const DEFAULT_SHORTCUTS: ShortcutConfig = {
+const DEFAULT_SHORTCUTS = {
   selectAll: 'meta+a',
   rescan: 'meta+r',
 };
@@ -33,7 +26,7 @@ function matchShortcut(e: KeyboardEvent, shortcut: string): boolean {
 
 function isShortcutEnabled(key: string): boolean {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem('maccleaner-settings');
     if (raw) {
       const s = JSON.parse(raw);
       return s.shortcutEnabled?.[key] !== false;
@@ -42,14 +35,13 @@ function isShortcutEnabled(key: string): boolean {
   return true;
 }
 
-export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) {
+export function useKeyboardShortcuts() {
   const { isSelected, selectAll, clearSelection } = useAppStore();
-
-  const shortcuts = { ...DEFAULT_SHORTCUTS, ...customShortcuts };
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (matchShortcut(e, shortcuts.selectAll) && isShortcutEnabled('selectAll')) {
+      // Cmd+A: Select all / deselect all
+      if (matchShortcut(e, DEFAULT_SHORTCUTS.selectAll) && isShortcutEnabled('selectAll')) {
         e.preventDefault();
         const state = useAppStore.getState();
         const currentModule = state.currentModule;
@@ -79,22 +71,9 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
       }
     }
 
-    // Main process intercepts Cmd+R and dispatches this DOM event
-    function handleRescanShortcut() {
-      if (isShortcutEnabled('rescan')) {
-        clearSelection();
-        const currentModule = useAppStore.getState().currentModule;
-        window.dispatchEvent(new CustomEvent('rescan-module', { detail: { moduleId: currentModule } }));
-      }
-    }
-
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('rescan-shortcut', handleRescanShortcut);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('rescan-shortcut', handleRescanShortcut);
-    };
-  }, [shortcuts, isSelected, selectAll, clearSelection]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSelected, selectAll, clearSelection]);
 }
 
 export function useRescanListener(moduleId: string, scanFn: () => void) {
@@ -109,4 +88,3 @@ export function useRescanListener(moduleId: string, scanFn: () => void) {
 }
 
 export { DEFAULT_SHORTCUTS };
-export type { ShortcutConfig };
