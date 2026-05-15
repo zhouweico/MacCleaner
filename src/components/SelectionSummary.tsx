@@ -71,7 +71,21 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
   const checked = isSelected(item.path);
   const children = item.children ?? [];
   const childSize = children.reduce((s, c) => s + c.size, 0);
+  const hasChildren = children.length > 0;
 
+  // 单文件：平铺行，不可展开
+  if (!hasChildren) {
+    return (
+      <div className={`flex items-center justify-between px-3 py-2.5 mb-1 rounded-lg hover:bg-macos-surface-hover ${checked ? 'bg-macos-surface-hover' : ''}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium truncate">{item.name}</span>
+        </div>
+        <span className="text-xs text-macos-text-tertiary shrink-0 ml-2">{formatBytes(item.size ?? 0)}</span>
+      </div>
+    );
+  }
+
+  // 文件夹/多文件：可展开卡片
   return (
     <div className="border border-macos-separator rounded-lg mb-2 overflow-hidden bg-macos-surface/50">
       <div
@@ -86,7 +100,7 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
           <span className="text-xs text-macos-text-tertiary">{children.length} 项 · {formatBytes(item.size ?? childSize)}</span>
         </div>
       </div>
-      {expanded && children.length > 0 && (
+      {expanded && (
         <div className="border-t border-macos-separator">
           {children.map((c) => (
             <FileRow key={c.path} file={c} finderIcon={finderIcon} />
