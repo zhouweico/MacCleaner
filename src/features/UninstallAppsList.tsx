@@ -294,7 +294,7 @@ export function UninstallAppsDetail() {
     return (
       <div className="flex h-full flex-col">
         <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-lg font-bold">已选 {selectedPaths.size} 项</div>
+          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
         </div>
         <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
           <p>已勾选的应用将批量卸载</p>
@@ -365,20 +365,20 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-macos-surface flex items-center justify-center overflow-hidden shrink-0">
               {app.iconData ? (
-                <img src={app.iconData} alt={app.name} className="w-10 h-10 object-contain" />
+                <img src={app.iconData} alt={app.name} className="w-8 h-8 object-contain" />
               ) : (
-                <span className="text-xl">📱</span>
+                <span className="text-sm">📱</span>
               )}
             </div>
             <div>
-              <h2 className="text-lg font-bold">{app.name}</h2>
+              <h2 className="text-sm font-bold">{app.name}</h2>
               <p className="text-xs text-macos-text-tertiary">{app.path}</p>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-lg font-bold">{formatBytes(totalSize)}</div>
+            <div className="text-sm font-bold">{formatBytes(totalSize)}</div>
             <p className="text-xs text-macos-text-tertiary">{app.associatedFiles.length + 1} 个项目</p>
           </div>
         </div>

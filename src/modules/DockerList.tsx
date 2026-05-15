@@ -126,7 +126,7 @@ export function DockerDetail() {
     return (
       <div className="flex h-full flex-col">
         <div className="border-b border-macos-separator px-4 py-3">
-          <div className="text-lg font-bold">已选 {selectedPaths.size} 项</div>
+          <div className="text-sm font-bold">已选 {selectedPaths.size} 项</div>
         </div>
         <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
           <p>已勾选的项目将批量清理</p>
@@ -148,14 +148,14 @@ export function DockerDetail() {
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-macos-surface flex items-center justify-center text-xl shrink-0">{icons[item.type ?? ''] ?? '🐳'}</div>
+            <div className="w-8 h-8 rounded-lg bg-macos-surface flex items-center justify-center text-sm shrink-0">{icons[item.type ?? ''] ?? '🐳'}</div>
             <div>
-              <h2 className="text-lg font-bold">{item.name}</h2>
+              <h2 className="text-sm font-bold">{item.name}</h2>
               <p className="text-xs text-macos-text-tertiary">{item.type ?? item.path}</p>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-lg font-bold">{formatBytes(item.size)}</div>
+            <div className="text-sm font-bold">{formatBytes(item.size)}</div>
           </div>
         </div>
       </div>
