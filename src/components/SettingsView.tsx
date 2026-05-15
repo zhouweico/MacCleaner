@@ -66,12 +66,11 @@ function SettingsView() {
   const [aiEnabled, setAiEnabled] = useState(() => loadSettings().aiEnabled);
   const [ollamaUrl, setOllamaUrl] = useState(() => loadSettings().ollamaUrl);
   const [saved, setSaved] = useState(false);
-  const [shortcuts, setShortcuts] = useState<Partial<ShortcutConfig>>(() => loadSettings().shortcuts || {});
+  const [shortcuts] = useState<Partial<ShortcutConfig>>(() => loadSettings().shortcuts || {});
   const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
     const s = loadSettings();
     return s.shortcutEnabled ?? { selectAll: true, rescan: true };
   });
-  const [editingKey, setEditingKey] = useState<string | null>(null);
 
   useEffect(() => {
     const s = loadSettings();
@@ -79,7 +78,6 @@ function SettingsView() {
     setScheduleEnabled(s.scheduleEnabled);
     setAiEnabled(s.aiEnabled);
     setOllamaUrl(s.ollamaUrl);
-    setShortcuts(s.shortcuts || {});
     setShortcutEnabled(s.shortcutEnabled ?? { selectAll: true, rescan: true });
   }, []);
 
@@ -103,23 +101,6 @@ function SettingsView() {
       window.dispatchEvent(new Event('settings-changed'));
       return next;
     });
-  }
-
-  function handleShortcutEdit(key: keyof ShortcutConfig) {
-    setEditingKey(key);
-  }
-
-  function handleShortcutKeyDown(e: React.KeyboardEvent, key: keyof ShortcutConfig) {
-    e.preventDefault();
-    const parts: string[] = [];
-    if (e.metaKey) parts.push('meta');
-    if (e.ctrlKey) parts.push('ctrl');
-    if (e.altKey) parts.push('alt');
-    if (e.shiftKey) parts.push('shift');
-    parts.push(e.key.toLowerCase());
-    const shortcut = parts.join('+');
-    setShortcuts(prev => ({ ...prev, [key]: shortcut }));
-    setEditingKey(null);
   }
 
   return (
@@ -198,14 +179,12 @@ function SettingsView() {
           <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">快捷键</h2>
         </div>
         <div className="px-4">
-          <p className="text-xs text-macos-text-tertiary py-2.5">若要更改快捷键，请先启用开关，然后按下组合键。</p>
           {(['selectAll', 'rescan'] as const).map((key, idx) => {
             const label = key === 'selectAll' ? '全选' : '重新扫描';
             const desc = key === 'selectAll' ? '选中/取消选中当前模块所有项目' : '重新扫描当前模块';
             const defaultVal = DEFAULT_SHORTCUTS[key];
             const currentVal = shortcuts[key] ?? defaultVal;
             const enabled = shortcutEnabled[key] !== false;
-            const isEditing = editingKey === key;
             return (
               <div key={key} className={`flex items-center justify-between ${idx === 0 ? '' : 'border-t border-macos-separator'}`}>
                 <div className="flex-1 py-2.5">
@@ -213,24 +192,9 @@ function SettingsView() {
                   <div className="text-xs text-macos-text-tertiary">{desc}</div>
                 </div>
                 <div className="flex items-center gap-4 py-2.5">
-                  {isEditing ? (
-                    <button
-                      tabIndex={0}
-                      onKeyDown={(e) => handleShortcutKeyDown(e, key)}
-                      onBlur={() => setEditingKey(null)}
-                      className="text-lg font-medium text-macos-accent focus:outline-none min-w-[80px] text-left"
-                      autoFocus
-                    >
-                      按下组合键...
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleShortcutEdit(key)}
-                      className="text-lg font-medium text-macos-text-primary hover:text-macos-accent transition-colors"
-                    >
-                      {formatShortcutKey(currentVal)}
-                    </button>
-                  )}
+                  <span className="text-sm font-medium text-macos-text-tertiary">
+                    {formatShortcutKey(currentVal)}
+                  </span>
                   <ToggleSwitch checked={enabled} onChange={() => toggleShortcut(key)} />
                 </div>
               </div>
