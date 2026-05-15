@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>图标选择 - 在访达中打开</title>
+<style>
+body { font-family: -apple-system, sans-serif; background: #1e1e2e; color: #cdd6f4; padding: 40px; }
+h2 { margin-bottom: 24px; }
+.grid { display: flex; gap: 32px; flex-wrap: wrap; }
+.option { text-align: center; padding: 20px; border-radius: 12px; border: 2px solid transparent; }
+.option:hover { border-color: #89b4fa; background: #313244; }
+svg { width: 48px; height: 48px; stroke: #cdd6f4; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.label { margin-top: 12px; font-size: 13px; color: #a6adc8; }
+.num { font-size: 24px; font-weight: bold; color: #89b4fa; margin-bottom: 8px; }
+.preview { margin-top: 32px; padding: 16px; background: #181825; border-radius: 8px; }
+.preview-label { font-size: 12px; color: #6c7086; margin-bottom: 12px; }
+.preview-row { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 8px; background: #1e1e2e; border-radius: 4px; }
+.preview-row svg { width: 12px; height: 12px; stroke: #a6adc8; }
+.preview-path { color: #cdd6f4; flex: 1; }
+.preview-size { color: #6c7086; }
+</style>
+</head>
+<body>
+<h2>选择「在访达中打开」图标</h2>
+<div class="grid">
+
+<div class="option">
+<div class="num">A</div>
+<!-- 十字准星 / 聚焦定位 -->
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+<div class="label">聚焦定位</div>
+</div>
+
+<div class="option">
+<div class="num">B</div>
+<!-- 方框+右上箭头 (外部链接) -->
+<svg viewBox="0 0 24 24"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="M21 3v8h-8"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+<div class="label">外部打开</div>
+</div>
+
+<div class="option">
+<div class="num">C</div>
+<!-- 文件夹+向下箭头 -->
+<svg viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/><path d="M12 12v6M10 14l2 2 2-2"/></svg>
+<div class="label">文件夹展开</div>
+</div>
+
+<div class="option">
+<div class="num">D</div>
+<!-- 指南针 / Finder 风格 -->
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+<div class="label">Finder 指南针</div>
+</div>
+
+</div>
+
+<div class="preview">
+<div class="preview-label">实际效果预览（路径 + 图标 + 大小）：</div>
+<div class="preview-row">
+<span>&#128193;</span>
+<span class="preview-path">~/Library/Caches/com.apple.Safari</span>
+<svg viewBox="0 0 24 24" stroke="#a6adc8"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+<span class="preview-size">128 MB</span>
+</div>
+<div class="preview-row">
+<span>&#128193;</span>
+<span class="preview-path">~/Library/Application Support</span>
+<svg viewBox="0 0 24 24" stroke="#a6adc8"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+<span class="preview-size">256 MB</span>
+</div>
+</div>
+
+</body>
+</html>

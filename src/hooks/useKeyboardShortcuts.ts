@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useAppStore } from '@/store';
 import type { ModuleId } from '@/types';
 
+const STORAGE_KEY = 'maccleaner-settings';
+
 interface ShortcutConfig {
   selectAll: string;
   rescan: string;
@@ -34,9 +36,31 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
 
   const shortcuts = { ...DEFAULT_SHORTCUTS, ...customShortcuts };
 
+  // Load enabled state from localStorage
+  const getEnabled = (): Record<string, boolean> => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        return s.shortcutEnabled ?? { selectAll: true, rescan: true };
+      }
+    } catch {}
+    return { selectAll: true, rescan: true };
+  };
+
+  let enabled = getEnabled();
+
+  useEffect(() => {
+    function onSettingsChange() {
+      enabled = getEnabled();
+    }
+    window.addEventListener('settings-changed', onSettingsChange);
+    return () => window.removeEventListener('settings-changed', onSettingsChange);
+  }, []);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (matchShortcut(e, shortcuts.selectAll)) {
+      if (matchShortcut(e, shortcuts.selectAll) && enabled.selectAll !== false) {
         e.preventDefault();
         const state = useAppStore.getState();
         const currentModule = state.currentModule;
@@ -66,7 +90,7 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
         return;
       }
 
-      if (matchShortcut(e, shortcuts.rescan)) {
+      if (matchShortcut(e, shortcuts.rescan) && enabled.rescan !== false) {
         e.preventDefault();
         const currentModule = useAppStore.getState().currentModule;
         clearSelection();

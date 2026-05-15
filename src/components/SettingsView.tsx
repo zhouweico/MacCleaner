@@ -10,6 +10,7 @@ interface SavedSettings {
   aiEnabled: boolean;
   ollamaUrl: string;
   shortcuts?: Partial<ShortcutConfig>;
+  shortcutEnabled?: Record<string, boolean>;
 }
 
 function loadSettings(): SavedSettings {
@@ -17,7 +18,7 @@ function loadSettings(): SavedSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434', shortcuts: {} };
+  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434', shortcuts: {}, shortcutEnabled: {} };
 }
 
 function saveSettings(settings: SavedSettings) {
@@ -60,6 +61,10 @@ function SettingsView() {
   const [ollamaUrl, setOllamaUrl] = useState(() => loadSettings().ollamaUrl);
   const [saved, setSaved] = useState(false);
   const [shortcuts, setShortcuts] = useState<Partial<ShortcutConfig>>(() => loadSettings().shortcuts || {});
+  const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
+    const s = loadSettings();
+    return s.shortcutEnabled ?? { selectAll: true, rescan: true };
+  });
   const [editingKey, setEditingKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,16 +74,29 @@ function SettingsView() {
     setAiEnabled(s.aiEnabled);
     setOllamaUrl(s.ollamaUrl);
     setShortcuts(s.shortcuts || {});
+    setShortcutEnabled(s.shortcutEnabled ?? { selectAll: true, rescan: true });
   }, []);
 
   async function handleSave() {
-    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl, shortcuts });
+    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl, shortcuts, shortcutEnabled });
     if (scheduleEnabled) {
       const [hour, minute] = scanTime.split(':');
       await registerSchedule(`${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`);
     }
+    window.dispatchEvent(new Event('settings-changed'));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  function toggleShortcut(key: string) {
+    setShortcutEnabled(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      // Save immediately so hook picks it up
+      const s = loadSettings();
+      saveSettings({ ...s, shortcutEnabled: next });
+      window.dispatchEvent(new Event('settings-changed'));
+      return next;
+    });
   }
 
   function handleShortcutEdit(key: keyof ShortcutConfig) {
@@ -96,10 +114,6 @@ function SettingsView() {
     const shortcut = parts.join('+');
     setShortcuts(prev => ({ ...prev, [key]: shortcut }));
     setEditingKey(null);
-  }
-
-  function resetShortcuts() {
-    setShortcuts({});
   }
 
   return (
@@ -174,43 +188,46 @@ function SettingsView() {
 
       {/* Shortcuts card */}
       <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-macos-separator flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">键盘快捷键</h2>
-          <button onClick={resetShortcuts} className="text-xs text-macos-text-tertiary hover:text-macos-text-primary">
-            恢复默认
-          </button>
+        <div className="px-4 py-2.5 border-b border-macos-separator">
+          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">快捷键</h2>
         </div>
         <div className="px-4">
+          <p className="text-xs text-macos-text-tertiary py-2.5">若要更改快捷键，请先启用开关，然后按下组合键。</p>
           {(['selectAll', 'rescan'] as const).map((key, idx) => {
             const label = key === 'selectAll' ? '全选' : '重新扫描';
             const desc = key === 'selectAll' ? '选中/取消选中当前模块所有项目' : '重新扫描当前模块';
             const defaultVal = DEFAULT_SHORTCUTS[key];
             const currentVal = shortcuts[key] ?? defaultVal;
+            const enabled = shortcutEnabled[key] !== false;
             const isEditing = editingKey === key;
             return (
-              <div key={key} className={`flex items-center justify-between ${idx === 0 ? 'py-2.5 border-b border-macos-separator' : 'py-2.5'}`}>
-                <div>
+              <div key={key} className={`flex items-center justify-between ${idx === 0 ? '' : 'border-t border-macos-separator'}`}>
+                <div className="flex-1 py-2.5">
                   <div className="text-sm font-medium">{label}</div>
                   <div className="text-xs text-macos-text-tertiary">{desc}</div>
                 </div>
-                {isEditing ? (
-                  <div
-                    tabIndex={0}
-                    onKeyDown={(e) => handleShortcutKeyDown(e, key)}
-                    onBlur={() => setEditingKey(null)}
-                    className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-accent border border-macos-accent focus:outline-none min-w-[100px] text-center cursor-pointer"
-                    autoFocus
-                  >
-                    按下组合键...
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleShortcutEdit(key)}
-                    className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator hover:border-macos-accent transition-colors"
-                  >
-                    {formatShortcutDisplay(currentVal)}
-                  </button>
-                )}
+                <div className="flex items-center gap-3 py-2.5">
+                  {isEditing ? (
+                    <div
+                      tabIndex={0}
+                      onKeyDown={(e) => handleShortcutKeyDown(e, key)}
+                      onBlur={() => setEditingKey(null)}
+                      className="rounded bg-macos-content px-3 py-1 text-xs text-macos-accent border border-macos-accent focus:outline-none min-w-[80px] text-center"
+                      autoFocus
+                    >
+                      按下组合键...
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => enabled && handleShortcutEdit(key)}
+                      disabled={!enabled}
+                      className={`rounded px-3 py-1 text-xs border transition-colors ${enabled ? 'bg-macos-content text-macos-text-primary border-macos-separator hover:border-macos-accent cursor-pointer' : 'text-macos-text-tertiary border-transparent cursor-default'}`}
+                    >
+                      {enabled ? formatShortcutDisplay(currentVal) : '关闭'}
+                    </button>
+                  )}
+                  <ToggleSwitch checked={enabled} onChange={() => toggleShortcut(key)} />
+                </div>
               </div>
             );
           })}

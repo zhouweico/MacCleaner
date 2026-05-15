@@ -11,7 +11,10 @@
       "Bash(npx vite *)",
       "Bash(npx electron *)",
       "Bash(pkill -f \"electron.*cleaner\")",
-      "Bash(pkill -9 -f \"electron\")"
+      "Bash(pkill -9 -f \"electron\")",
+      "Bash(pkill -9 -f \"vite\")",
+      "Bash(npm run *)",
+      "Read(//tmp/**)"
     ]
   }
 }
