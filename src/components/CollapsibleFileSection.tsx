@@ -90,22 +90,20 @@ export default function CollapsibleFileSection({
               )}
               <span className="text-macos-text-tertiary shrink-0">{f.isDir ? '📁' : '📄'}</span>
               <span className="text-macos-text-primary truncate flex-1 min-w-0">{f.path}</span>
-              {f.isDir && (
-                <button
-                  onClick={() => handleOpenFinder(f.path)}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0 rounded hover:bg-macos-surface-hover"
-                  title="在访达中打开"
-                >
-                  {iconSrc ? (
-                    <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                      <rect x="9" y="3" width="6" height="4" rx="1" />
-                    </svg>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={() => handleOpenFinder(f.path)}
+                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0 rounded hover:bg-macos-surface-hover"
+                title="在访达中打开"
+              >
+                {iconSrc ? (
+                  <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                  </svg>
+                )}
+              </button>
               <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(f.size)}</span>
             </div>
           ))}
