@@ -81,6 +81,14 @@ function createWindow() {
 
   mainWindow.loadURL('http://localhost:5173');
   mainWindow.webContents.openDevTools();
+
+  // Intercept Cmd+R to trigger rescan via IPC (Electron default menu consumes it otherwise)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key.toLowerCase() === 'r' && input.meta && !input.shift) {
+      event.preventDefault();
+      mainWindow?.webContents.send('shortcut:rescan');
+    }
+  });
 }
 
 app.whenReady().then(() => {

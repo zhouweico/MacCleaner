@@ -87,19 +87,23 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
         const allSelected = paths.every(p => isSelected(p));
         if (allSelected) clearSelection();
         else selectAll(paths);
-        return;
-      }
-
-      if (matchShortcut(e, shortcuts.rescan) && enabled.rescan !== false) {
-        e.preventDefault();
-        const currentModule = useAppStore.getState().currentModule;
-        clearSelection();
-        window.dispatchEvent(new CustomEvent('rescan-module', { detail: { moduleId: currentModule } }));
       }
     }
 
+    // Cmd+R is intercepted in main process and sent via IPC
+    const cleanup = window.electronAPI.ipc.on('shortcut:rescan', () => {
+      if (enabled.rescan !== false) {
+        clearSelection();
+        const currentModule = useAppStore.getState().currentModule;
+        window.dispatchEvent(new CustomEvent('rescan-module', { detail: { moduleId: currentModule } }));
+      }
+    });
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      cleanup();
+    };
   }, [shortcuts, isSelected, selectAll, clearSelection]);
 }
 
