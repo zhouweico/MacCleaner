@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '@/store';
 import type { ModuleId } from '@/types';
 
@@ -31,28 +31,27 @@ function matchShortcut(e: KeyboardEvent, shortcut: string): boolean {
   return true;
 }
 
+function getEnabled(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      return s.shortcutEnabled ?? { selectAll: true, rescan: true };
+    }
+  } catch {}
+  return { selectAll: true, rescan: true };
+}
+
 export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) {
   const { isSelected, selectAll, clearSelection } = useAppStore();
+  const enabledRef = useRef(getEnabled());
 
   const shortcuts = { ...DEFAULT_SHORTCUTS, ...customShortcuts };
 
-  // Load enabled state from localStorage
-  const getEnabled = (): Record<string, boolean> => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const s = JSON.parse(raw);
-        return s.shortcutEnabled ?? { selectAll: true, rescan: true };
-      }
-    } catch {}
-    return { selectAll: true, rescan: true };
-  };
-
-  let enabled = getEnabled();
-
+  // Keep enabledRef in sync with settings changes
   useEffect(() => {
     function onSettingsChange() {
-      enabled = getEnabled();
+      enabledRef.current = getEnabled();
     }
     window.addEventListener('settings-changed', onSettingsChange);
     return () => window.removeEventListener('settings-changed', onSettingsChange);
@@ -60,7 +59,7 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (matchShortcut(e, shortcuts.selectAll) && enabled.selectAll !== false) {
+      if (matchShortcut(e, shortcuts.selectAll) && enabledRef.current.selectAll !== false) {
         e.preventDefault();
         const state = useAppStore.getState();
         const currentModule = state.currentModule;
@@ -90,19 +89,20 @@ export function useKeyboardShortcuts(customShortcuts?: Partial<ShortcutConfig>) 
       }
     }
 
-    // Cmd+R is intercepted in main process and sent via IPC
-    const cleanup = window.electronAPI.ipc.on('shortcut:rescan', () => {
-      if (enabled.rescan !== false) {
+    // Listen for rescan shortcut from main process via DOM event
+    const handleRescanShortcut = () => {
+      if (enabledRef.current.rescan !== false) {
         clearSelection();
         const currentModule = useAppStore.getState().currentModule;
         window.dispatchEvent(new CustomEvent('rescan-module', { detail: { moduleId: currentModule } }));
       }
-    });
+    };
 
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('rescan-shortcut', handleRescanShortcut);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      cleanup();
+      window.removeEventListener('rescan-shortcut', handleRescanShortcut);
     };
   }, [shortcuts, isSelected, selectAll, clearSelection]);
 }

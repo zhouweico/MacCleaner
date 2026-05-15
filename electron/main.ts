@@ -86,7 +86,7 @@ function createWindow() {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key.toLowerCase() === 'r' && input.meta && !input.shift) {
       event.preventDefault();
-      mainWindow?.webContents.send('shortcut:rescan');
+      mainWindow?.webContents.executeJavaScript('window.dispatchEvent(new CustomEvent("rescan-shortcut"))');
     }
   });
 }
