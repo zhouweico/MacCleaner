@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore, type AppState, type SelectedItem } from '@/store';
 import { uninstallCliTool } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 
 type CliTool = AppState['cliTools'][number];
 
@@ -34,7 +35,7 @@ function UninstallCliList() {
     }
   }, [searchTargetPath, cliTools]);
 
-  async function handleScan() {
+  const handleScan = useCallback(async () => {
     setScanning(true);
     try {
       const result = await window.electronAPI.ipc.invoke('scan:cli-tools') as CliTool[];
@@ -42,7 +43,9 @@ function UninstallCliList() {
     } finally {
       setScanning(false);
     }
-  }
+  }, [setScanning, setCliTools]);
+
+  useRescanListener('uninstall-cli', handleScan);
 
   function handleSelect(tool: (typeof cliTools)[number], i: number) {
     const key = getToolKey(tool, i);
@@ -55,14 +58,11 @@ function UninstallCliList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">️ CLI 工具卸载</h2>
           <p className="text-xs text-macos-text-tertiary">{cliTools.length} 个工具</p>
         </div>
-        <button onClick={handleScan} disabled={isScanning} className="rounded bg-macos-accent px-2 py-1 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50">
-          {isScanning ? '扫描中...' : '重新扫描'}
-        </button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3">
         {cliTools.length > 0 ? (

@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useState, useRef, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanApps, scanAppAssociated, uninstallApp, showItemInFolder, getFinderIcon } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, AssociatedFile } from '@/types';
 
 // Cache finder icon globally
@@ -141,26 +142,7 @@ function UninstallAppsList() {
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-  useEffect(() => {
-    lastAutoSelectPath.current = '';
-    if (apps.length === 0) handleScan();
-  }, []);
-
-  // Auto-select from search navigation + scroll into view
-  useEffect(() => {
-    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current) return;
-    const app = apps.find(a => a.path === searchTargetPath);
-    if (app) {
-      setSelectedItem({ ...app, path: app.path } as unknown as SelectedItem);
-      lastAutoSelectPath.current = searchTargetPath;
-      requestAnimationFrame(() => {
-        const el = rowRefs.current.get(app.path);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-    }
-  }, [searchTargetPath, apps]);
-
-  async function handleScan() {
+  const handleScan = useCallback(async () => {
     setScanningState(true);
     setScanning(true);
     setSelectedItem(null);
@@ -175,7 +157,28 @@ function UninstallAppsList() {
       setScanningState(false);
       setScanning(false);
     }
-  }
+  }, [setScanning, setSelectedItem, clearSelection, setApps]);
+
+  useEffect(() => {
+    lastAutoSelectPath.current = '';
+    if (apps.length === 0) handleScan();
+  }, []);
+
+  useRescanListener('uninstall-apps', handleScan);
+
+  // Auto-select from search navigation + scroll into view
+  useEffect(() => {
+    if (!searchTargetPath || searchTargetPath === lastAutoSelectPath.current) return;
+    const app = apps.find(a => a.path === searchTargetPath);
+    if (app) {
+      setSelectedItem({ ...app, path: app.path } as unknown as SelectedItem);
+      lastAutoSelectPath.current = searchTargetPath;
+      requestAnimationFrame(() => {
+        const el = rowRefs.current.get(app.path);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }, [searchTargetPath, apps]);
 
   async function handleSelectApp(app: AppInfo) {
     if (app.associatedFiles.length === 0 && app.bundleId) {
@@ -193,18 +196,11 @@ function UninstallAppsList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">📱 应用程序</h2>
           <p className="text-xs text-macos-text-tertiary">{totalApps} 个应用 · {formatBytes(totalSize)}</p>
         </div>
-        <button
-          onClick={handleScan}
-          disabled={scanning}
-          className="rounded bg-macos-accent px-2 py-1 text-xs font-medium hover:bg-macos-accent-hover disabled:opacity-50"
-        >
-          {scanning ? '扫描中...' : '重新扫描'}
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-3">

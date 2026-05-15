@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 import { useClean } from '@/hooks/useClean';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
@@ -12,10 +13,20 @@ function NpmList() {
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
+  const handleScan = useCallback(async () => {
+    setScanning(true);
+    try {
+      const result = await scanModule('npm');
+      setScanResults({ npm: result });
+    } finally { setScanning(false); }
+  }, [setScanning, setScanResults]);
+
   useEffect(() => {
     lastAutoSelectPath.current = '';
     handleScan();
   }, []);
+
+  useRescanListener('npm', handleScan);
 
   // Auto-select from search navigation + scroll into view
   useEffect(() => {
@@ -30,14 +41,6 @@ function NpmList() {
       });
     }
   }, [searchTargetPath, result]);
-
-  async function handleScan() {
-    setScanning(true);
-    try {
-      const result = await scanModule('npm');
-      setScanResults({ npm: result });
-    } finally { setScanning(false); }
-  }
 
   function handleSelect(item: ScanItem) {
     setSelectedItem(item as unknown as SelectedItem);

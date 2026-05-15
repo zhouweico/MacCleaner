@@ -1,20 +1,31 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule, advancedClean } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem, CleanAction } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
 function SystemCacheList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
   const result = scanResults['system-cache'];
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  const handleScan = useCallback(async () => {
+    setScanning(true);
+    try {
+      const result = await scanModule('system-cache');
+      setScanResults({ 'system-cache': result });
+    } finally { setScanning(false); }
+  }, [setScanning, setScanResults]);
 
   useEffect(() => {
     lastAutoSelectPath.current = '';
     handleScan();
   }, []);
+
+  useRescanListener('system-cache', handleScan);
 
   // Auto-select from search navigation + scroll into view
   useEffect(() => {
@@ -30,35 +41,18 @@ function SystemCacheList() {
     }
   }, [searchTargetPath, result]);
 
-  async function handleScan() {
-    setScanning(true);
-    try {
-      const result = await scanModule('system-cache');
-      setScanResults({ 'system-cache': result });
-    } finally { setScanning(false); }
-  }
-
   function handleSelect(item: ScanItem) {
     setSelectedItem(item as unknown as SelectedItem);
-  }
-
-  function selectAll() {
-    if (!result) return;
-    clearSelection();
-    result.items.forEach(item => toggleSelection(item.path));
   }
 
   if (!result) return <p className="p-4 text-macos-text-tertiary">加载中...</p>;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">🗂️ 系统缓存</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
-        </div>
-        <div className="flex gap-1.5">
-          <button onClick={selectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">全选</button>
         </div>
       </div>
       <p className="px-4 py-2 text-xs text-macos-text-tertiary">缓存删除后应用会自动重建，不影响数据</p>

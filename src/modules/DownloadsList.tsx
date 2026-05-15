@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
@@ -29,10 +30,20 @@ function DownloadsList() {
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
+  const handleScan = useCallback(async () => {
+    setScanning(true);
+    try {
+      const result = await scanModule('downloads');
+      setScanResults({ downloads: result });
+    } finally { setScanning(false); }
+  }, [setScanning, setScanResults]);
+
   useEffect(() => {
     lastAutoSelectPath.current = '';
     handleScan();
   }, []);
+
+  useRescanListener('downloads', handleScan);
 
   // Auto-select from search navigation + scroll into view
   useEffect(() => {
@@ -47,14 +58,6 @@ function DownloadsList() {
       });
     }
   }, [searchTargetPath, result]);
-
-  async function handleScan() {
-    setScanning(true);
-    try {
-      const result = await scanModule('downloads');
-      setScanResults({ downloads: result });
-    } finally { setScanning(false); }
-  }
 
   function handleSelect(item: ScanItem) {
     selectItem(item.path, item as unknown as SelectedItem);
@@ -103,16 +106,10 @@ function DownloadsList() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">📥 下载</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
-        </div>
-        <div className="flex gap-1.5">
-          {result.items.length > 0 && (
-            <button onClick={selectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">全选</button>
-          )}
-          <button onClick={handleScan} className="rounded bg-macos-accent px-2 py-1 text-xs font-medium hover:bg-macos-accent-hover">重新扫描</button>
         </div>
       </div>
 

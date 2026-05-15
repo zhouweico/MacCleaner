@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { registerSchedule } from '@/lib/ipc';
+import { DEFAULT_SHORTCUTS, type ShortcutConfig } from '@/hooks/useKeyboardShortcuts';
 
 const STORAGE_KEY = 'maccleaner-settings';
 
@@ -8,6 +9,7 @@ interface SavedSettings {
   scheduleEnabled: boolean;
   aiEnabled: boolean;
   ollamaUrl: string;
+  shortcuts?: Partial<ShortcutConfig>;
 }
 
 function loadSettings(): SavedSettings {
@@ -15,11 +17,20 @@ function loadSettings(): SavedSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434' };
+  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434', shortcuts: {} };
 }
 
 function saveSettings(settings: SavedSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+function formatShortcutDisplay(shortcut: string): string {
+  return shortcut
+    .replace('meta', '⌘')
+    .replace('shift', '⇧')
+    .replace('ctrl', '⌃')
+    .replace('alt', '⌥')
+    .replace(/\+/g, '');
 }
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -48,6 +59,8 @@ function SettingsView() {
   const [aiEnabled, setAiEnabled] = useState(() => loadSettings().aiEnabled);
   const [ollamaUrl, setOllamaUrl] = useState(() => loadSettings().ollamaUrl);
   const [saved, setSaved] = useState(false);
+  const [shortcuts, setShortcuts] = useState<Partial<ShortcutConfig>>(() => loadSettings().shortcuts || {});
+  const [editingKey, setEditingKey] = useState<string | null>(null);
 
   useEffect(() => {
     const s = loadSettings();
@@ -55,16 +68,38 @@ function SettingsView() {
     setScheduleEnabled(s.scheduleEnabled);
     setAiEnabled(s.aiEnabled);
     setOllamaUrl(s.ollamaUrl);
+    setShortcuts(s.shortcuts || {});
   }, []);
 
   async function handleSave() {
-    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl });
+    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl, shortcuts });
     if (scheduleEnabled) {
       const [hour, minute] = scanTime.split(':');
       await registerSchedule(`${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`);
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleShortcutEdit(key: keyof ShortcutConfig) {
+    setEditingKey(key);
+  }
+
+  function handleShortcutKeyDown(e: React.KeyboardEvent, key: keyof ShortcutConfig) {
+    e.preventDefault();
+    const parts: string[] = [];
+    if (e.metaKey) parts.push('meta');
+    if (e.ctrlKey) parts.push('ctrl');
+    if (e.altKey) parts.push('alt');
+    if (e.shiftKey) parts.push('shift');
+    parts.push(e.key.toLowerCase());
+    const shortcut = parts.join('+');
+    setShortcuts(prev => ({ ...prev, [key]: shortcut }));
+    setEditingKey(null);
+  }
+
+  function resetShortcuts() {
+    setShortcuts({});
   }
 
   return (
@@ -134,6 +169,51 @@ function SettingsView() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Shortcuts card */}
+      <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-macos-separator flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">键盘快捷键</h2>
+          <button onClick={resetShortcuts} className="text-xs text-macos-text-tertiary hover:text-macos-text-primary">
+            恢复默认
+          </button>
+        </div>
+        <div className="px-4">
+          {(['selectAll', 'rescan'] as const).map((key, idx) => {
+            const label = key === 'selectAll' ? '全选' : '重新扫描';
+            const desc = key === 'selectAll' ? '选中/取消选中当前模块所有项目' : '重新扫描当前模块';
+            const defaultVal = DEFAULT_SHORTCUTS[key];
+            const currentVal = shortcuts[key] ?? defaultVal;
+            const isEditing = editingKey === key;
+            return (
+              <div key={key} className={`flex items-center justify-between ${idx === 0 ? 'py-2.5 border-b border-macos-separator' : 'py-2.5'}`}>
+                <div>
+                  <div className="text-sm font-medium">{label}</div>
+                  <div className="text-xs text-macos-text-tertiary">{desc}</div>
+                </div>
+                {isEditing ? (
+                  <div
+                    tabIndex={0}
+                    onKeyDown={(e) => handleShortcutKeyDown(e, key)}
+                    onBlur={() => setEditingKey(null)}
+                    className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-accent border border-macos-accent focus:outline-none min-w-[100px] text-center cursor-pointer"
+                    autoFocus
+                  >
+                    按下组合键...
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleShortcutEdit(key)}
+                    className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator hover:border-macos-accent transition-colors"
+                  >
+                    {formatShortcutDisplay(currentVal)}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

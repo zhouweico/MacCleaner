@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanResidual, advancedClean } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, CleanAction } from '@/types';
 
 function ResidualCleanerList() {
@@ -9,10 +10,21 @@ function ResidualCleanerList() {
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
+  const handleScan = useCallback(async () => {
+    try {
+      const result = await scanResidual();
+      setResiduals(result);
+    } finally {
+      clearSelection();
+    }
+  }, [setResiduals, clearSelection]);
+
   useEffect(() => {
     lastAutoSelectPath.current = '';
     if (residuals.length === 0) handleScan();
   }, []);
+
+  useRescanListener('residual-clean', handleScan);
 
   // Auto-select from search navigation + scroll into view
   useEffect(() => {
@@ -31,34 +43,17 @@ function ResidualCleanerList() {
     }
   }, [searchTargetPath, residuals]);
 
-  async function handleScan() {
-    try {
-      const result = await scanResidual();
-      setResiduals(result);
-    } finally {
-      clearSelection();
-    }
-  }
-
   function handleSelect(res: AppInfo, i: number) {
     const key = res.path || `${res.name}-${i}`;
     setSelectedItem({ ...res, path: key } as unknown as SelectedItem);
   }
 
-  function selectAll() {
-    clearSelection();
-    residuals.forEach(r => toggleSelection(r.path));
-  }
-
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">🗑️ 残留文件</h2>
           <p className="text-xs text-macos-text-tertiary">{residuals.length} 项</p>
-        </div>
-        <div className="flex gap-1.5">
-          <button onClick={selectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">全选</button>
         </div>
       </div>
       <p className="px-4 py-2 text-xs text-macos-text-tertiary">以下文件属于已卸载 APP 的残留</p>

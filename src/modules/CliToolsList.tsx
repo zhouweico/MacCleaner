@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 
@@ -14,15 +15,25 @@ async function moveToTrash(paths: string[]) {
 }
 
 function CliToolsList() {
-  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
+  const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
   const result = scanResults['cli-tools'];
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  const handleScan = useCallback(async () => {
+    setScanning(true);
+    try {
+      const result = await scanModule('cli-tools');
+      setScanResults({ 'cli-tools': result });
+    } finally { setScanning(false); }
+  }, [setScanning, setScanResults]);
 
   useEffect(() => {
     lastAutoSelectPath.current = '';
     handleScan();
   }, []);
+
+  useRescanListener('cli-tools', handleScan);
 
   // Auto-select from search navigation + scroll into view
   useEffect(() => {
@@ -51,34 +62,14 @@ function CliToolsList() {
     }
   }, [searchTargetPath, result]);
 
-  async function handleScan() {
-    setScanning(true);
-    try {
-      const result = await scanModule('cli-tools');
-      setScanResults({ 'cli-tools': result });
-    } finally { setScanning(false); }
-  }
-
-  function selectAll() {
-    if (!result) return;
-    clearSelection();
-    result.items.forEach(item => toggleSelection(item.path));
-  }
-
   if (!result) return <p className="p-4 text-macos-text-tertiary">加载中...</p>;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
+      <div className="border-b border-macos-separator px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">🛠️ CLI 工具</h2>
           <p className="text-xs text-macos-text-tertiary">{result.items.length} 项 · {formatBytes(result.totalSize)}</p>
-        </div>
-        <div className="flex gap-1.5">
-          {result.items.length > 0 && (
-            <button onClick={selectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">全选</button>
-          )}
-          <button onClick={handleScan} className="rounded bg-macos-accent px-2 py-1 text-xs font-medium hover:bg-macos-accent-hover">重新扫描</button>
         </div>
       </div>
       <p className="px-4 py-2 text-xs text-macos-text-tertiary">选中工具将移至废纸篓（非永久删除）</p>
