@@ -1,5 +1,6 @@
-import { useAppStore, navItems } from '@/store';
+import { useAppStore, navItems, buildSearchResults, groupSearchResults } from '@/store';
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { formatBytes } from '@/lib/format';
 
 const groupLabels: Record<string, string> = {
   clean: '清理',
@@ -23,9 +24,23 @@ const iconBgMap: Record<string, string> = {
 };
 
 /** 高亮匹配关键词 */
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const qLower = query.toLowerCase();
+  const idx = lower.indexOf(qLower);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span className="font-bold">{text.slice(idx, idx + query.length)}</span>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
 
 function Sidebar() {
-  const { currentModule, setCurrentModule, clearSearch, setSearchTargetPath } = useAppStore();
+  const { currentModule, setCurrentModule, searchQuery, setSearchQuery, clearSearch, setSearchTargetPath } = useAppStore();
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +55,40 @@ function Sidebar() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  // Escape 清空搜索
+  useEffect(() => {
+    if (!searchQuery) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        clearSearch();
+        setMenuSearchQuery('');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [searchQuery, clearSearch]);
+
+  // 同步内部状态到 store（用于搜索计算）
+  const handleSearchChange = (value: string) => {
+    setMenuSearchQuery(value);
+    setSearchQuery(value);
+  };
+
+  const handleClear = () => {
+    setMenuSearchQuery('');
+    clearSearch();
+    inputRef.current?.focus();
+  };
+
+  // 导航到模块
+  const navigateTo = (moduleId: string, targetPath?: string) => {
+    setCurrentModule(moduleId);
+    if (targetPath) setSearchTargetPath(targetPath);
+  };
+
+  const isSearching = searchQuery.length > 0;
+  const searchGroups = isSearching ? groupSearchResults(buildSearchResults()) : [];
 
   // 按 group 分组导航项
   const groupedNavItems = useMemo(() => {
@@ -86,12 +135,12 @@ function Sidebar() {
             type="text"
             placeholder="搜索"
             value={menuSearchQuery}
-            onChange={e => setMenuSearchQuery(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
             className="w-full pl-8 pr-7 py-1.5 text-sm bg-macos-sidebar-hover/60 rounded-lg outline-none focus:ring-1 focus:ring-macos-accent text-macos-text-primary placeholder:text-macos-text-tertiary"
           />
           {menuSearchQuery && (
             <button
-              onClick={() => { setMenuSearchQuery(''); inputRef.current?.focus(); }}
+              onClick={handleClear}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-macos-text-tertiary flex items-center justify-center hover:bg-macos-text-secondary"
             >
               <svg className="w-2.5 h-2.5 text-macos-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,9 +153,51 @@ function Sidebar() {
 
       {/* Menu / Search Results */}
       <nav className="flex-1 overflow-y-auto px-2 pb-3">
-        {Object.keys(filteredGroups).length === 0 && hasSearch ? (
-          <p className="px-3 py-2 text-xs text-macos-text-tertiary">未找到匹配结果</p>
+        {isSearching ? (
+          // 搜索结果视图
+          searchGroups.length > 0 ? (
+            searchGroups.map((group) => (
+              <div key={group.moduleId} className="mb-1">
+                {/* 模块分组头 */}
+                <button
+                  onClick={() => navigateTo(group.moduleId)}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                    currentModule === group.moduleId
+                      ? 'bg-macos-accent text-white font-medium'
+                      : 'text-macos-text-primary hover:bg-macos-surface-hover'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded flex items-center justify-center text-xs shrink-0 ${iconBgMap[group.moduleIcon] ?? 'bg-macos-surface'}`}>
+                    <span>{group.moduleIcon}</span>
+                  </div>
+                  <span className="truncate font-medium">
+                    <HighlightText text={group.moduleName} query={searchQuery} />
+                  </span>
+                </button>
+                {/* 匹配的子项 */}
+                {group.items.filter(item => item.itemType !== 'module').map((item, i) => (
+                  <button
+                    key={`${item.moduleId}-${item.itemName}-${i}`}
+                    onClick={() => navigateTo(item.moduleId, item.itemPath)}
+                    className="flex w-full items-center gap-2 pl-10 pr-2 py-1 text-xs text-macos-text-secondary hover:bg-macos-surface-hover hover:text-macos-text-primary transition-colors rounded-md"
+                  >
+                    <span className="truncate">
+                      <HighlightText text={item.itemName} query={searchQuery} />
+                    </span>
+                    {item.itemSize !== undefined && (
+                      <span className="ml-auto shrink-0 text-macos-text-tertiary">
+                        {formatBytes(item.itemSize)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ))
+          ) : (
+            <p className="px-2 py-4 text-xs text-macos-text-tertiary text-center">无匹配结果</p>
+          )
         ) : (
+          // 正常菜单视图
           (() => {
             const order = ['clean', 'uninstall', 'settings'];
             return order
