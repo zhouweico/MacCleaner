@@ -51,6 +51,8 @@ function createTray() {
   });
 }
 
+let willQuit = false;
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1152,
@@ -73,7 +75,7 @@ function createWindow() {
   });
 
   mainWindow.on('close', (event) => {
-    if (process.platform === 'darwin') {
+    if (!willQuit) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -117,6 +119,10 @@ app.whenReady().then(() => {
   registerCleanHandlers();
   registerUninstallHandlers();
   registerScheduleHandlers(mainWindow!);
+});
+
+app.on('before-quit', () => {
+  willQuit = true;
 });
 
 app.on('window-all-closed', () => {
