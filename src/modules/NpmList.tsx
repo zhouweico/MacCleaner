@@ -128,7 +128,6 @@ export function NpmDetail() {
       .map(i => ({ name: i.name, path: i.path, size: i.size, children: (i as any).children }));
     return (
       <SelectionSummary
-        moduleName="npm 缓存"
         moduleIcon="📦"
         items={items}
         onClean={handleClean}

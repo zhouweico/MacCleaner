@@ -210,7 +210,6 @@ export function DownloadsDetail() {
     const items = (result?.items ?? []).filter(i => selectedPaths.has(i.path)).map(i => ({ name: i.name, path: i.path, size: i.size, children: i.children }));
     return (
       <SelectionSummary
-        moduleName="下载"
         moduleIcon="📥"
         items={items}
         onClean={handleClean}

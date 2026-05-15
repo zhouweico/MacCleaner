@@ -133,7 +133,6 @@ export function DockerDetail() {
       .map(i => ({ name: i.name, path: i.path, size: i.size, children: (i as any).children }));
     return (
       <SelectionSummary
-        moduleName="Docker"
         moduleIcon="🐳"
         items={items}
         onClean={handleClean}

@@ -147,7 +147,6 @@ export function UninstallCliDetail() {
 
     return (
       <SelectionSummary
-        moduleName="CLI 工具卸载"
         moduleIcon="🛠️"
         items={items}
         onClean={handleUninstall}

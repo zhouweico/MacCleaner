@@ -124,7 +124,6 @@ export function BrewDetail() {
       .map(i => ({ name: i.name, path: i.path, size: i.size, children: (i as any).children }));
     return (
       <SelectionSummary
-        moduleName="Homebrew"
         moduleIcon="🍺"
         items={items}
         onClean={handleClean}

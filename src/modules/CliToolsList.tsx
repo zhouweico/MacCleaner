@@ -142,7 +142,6 @@ export function CliToolsDetail() {
     const items = (result?.items ?? []).filter(i => selectedPaths.has(i.path)).map(i => ({ name: i.name, path: i.path, size: i.size, children: i.children }));
     return (
       <SelectionSummary
-        moduleName="CLI 工具"
         moduleIcon="🛠️"
         items={items}
         onClean={handleClean}

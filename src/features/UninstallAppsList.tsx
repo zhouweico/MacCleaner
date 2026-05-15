@@ -297,7 +297,6 @@ export function UninstallAppsDetail() {
 
     return (
       <SelectionSummary
-        moduleName="应用程序"
         moduleIcon="📱"
         items={items}
         onClean={handleBatchUninstall}

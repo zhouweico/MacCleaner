@@ -132,7 +132,6 @@ export function ResidualCleanerDetail() {
 
     return (
       <SelectionSummary
-        moduleName="残留文件"
         moduleIcon="🗑️"
         items={items}
         onClean={handleClean}
