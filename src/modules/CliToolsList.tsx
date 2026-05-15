@@ -94,7 +94,7 @@ function CliToolsList() {
                     if (el) rowRefs.current.set(item.path || `${(item as unknown as { source: string; name: string }).source}:${item.name}`, el);
                     else rowRefs.current.delete(item.path || `${(item as unknown as { source: string; name: string }).source}:${item.name}`);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-surface-hover' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => setSelectedItem(item as unknown as SelectedItem)}
                 >
                   <input

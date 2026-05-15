@@ -65,7 +65,7 @@ function NpmList() {
                     if (el) rowRefs.current.set(item.path, el);
                     else rowRefs.current.delete(item.path);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-surface-hover' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => handleSelect(item)}
                 >
                   <input
