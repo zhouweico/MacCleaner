@@ -83,10 +83,9 @@ function SelectionCard({ item }: { item: SelectionItem }) {
             style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
             title="在访达中打开"
           >
-            <svg className="w-3.5 h-3.5 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
+            <svg className="w-4 h-4 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="10 9 15 4 20 9" />
+              <path d="M15 4v7a4 4 0 0 1-4 4H4" />
             </svg>
           </button>
           <span className="text-xs text-macos-text-tertiary">{formatBytes(item.size ?? 0)}</span>
@@ -117,10 +116,9 @@ function SelectionCard({ item }: { item: SelectionItem }) {
             style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
             title="在访达中打开"
           >
-            <svg className="w-3.5 h-3.5 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
+            <svg className="w-4 h-4 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="10 9 15 4 20 9" />
+              <path d="M15 4v7a4 4 0 0 1-4 4H4" />
             </svg>
           </button>
           <span className="text-xs text-macos-text-tertiary">{children.length} 项 · {formatBytes(item.size ?? childSize)}</span>
