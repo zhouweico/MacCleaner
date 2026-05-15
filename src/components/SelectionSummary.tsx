@@ -79,7 +79,7 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs text-macos-text-tertiary shrink-0">{expanded ? '▾' : '▸'}</span>
+          <span className="text-xl text-macos-text-tertiary shrink-0">{expanded ? '▾' : '▸'}</span>
           <span className="text-sm font-medium truncate">{item.name}</span>
         </div>
         <div className="flex items-center gap-3 shrink-0 ml-2">

@@ -121,7 +121,7 @@ export default function CollapsibleFileSection({
               className="rounded shrink-0"
             />
           )}
-          <span className="text-xs text-macos-text-tertiary">{expanded ? '▾' : '▸'}</span>
+          <span className="text-xl text-macos-text-tertiary">{expanded ? '▾' : '▸'}</span>
           <span className="text-sm font-medium">{title}</span>
         </div>
         <span className="text-xs text-macos-text-tertiary">{files.length} 项 · {formatBytes(totalSize)}</span>

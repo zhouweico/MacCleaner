@@ -121,7 +121,7 @@ function CollapsibleSection({ title, files, checkedFiles, onToggleFile, defaultE
             onClick={(e) => e.stopPropagation()}
             className="rounded shrink-0"
           />
-          <span className="text-xs text-macos-text-tertiary">{expanded ? '▾' : '▸'}</span>
+          <span className="text-xl text-macos-text-tertiary">{expanded ? '▾' : '▸'}</span>
           <span className="text-sm font-medium">{title}</span>
         </div>
         <span className="text-xs text-macos-text-tertiary">{files.length} 个文件 · {formatBytes(totalSize)}</span>
