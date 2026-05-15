@@ -84,8 +84,8 @@ function SelectionCard({ item }: { item: SelectionItem }) {
             title="在访达中打开"
           >
             <svg className="w-4 h-4 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="10 9 15 4 20 9" />
-              <path d="M15 4v7a4 4 0 0 1-4 4H4" />
+              <path d="M4 19h7a4 4 0 0 0 4-4V8" />
+              <polyline points="11 4 15 8 19 4" />
             </svg>
           </button>
           <span className="text-xs text-macos-text-tertiary">{formatBytes(item.size ?? 0)}</span>
@@ -117,8 +117,8 @@ function SelectionCard({ item }: { item: SelectionItem }) {
             title="在访达中打开"
           >
             <svg className="w-4 h-4 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="10 9 15 4 20 9" />
-              <path d="M15 4v7a4 4 0 0 1-4 4H4" />
+              <path d="M4 19h7a4 4 0 0 0 4-4V8" />
+              <polyline points="11 4 15 8 19 4" />
             </svg>
           </button>
           <span className="text-xs text-macos-text-tertiary">{children.length} 项 · {formatBytes(item.size ?? childSize)}</span>
