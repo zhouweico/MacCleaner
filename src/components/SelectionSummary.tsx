@@ -1,7 +1,7 @@
 import { useAppStore } from '@/store';
 import { formatBytes } from '@/lib/format';
-import { showItemInFolder, getFinderIcon } from '@/lib/ipc';
-import { useEffect, useState } from 'react';
+import { showItemInFolder } from '@/lib/ipc';
+import { useState } from 'react';
 
 interface SelectionSummaryProps {
   moduleName: string;
@@ -18,18 +18,9 @@ export interface SelectionItem {
   children?: { name: string; path: string; size: number; isDir?: boolean }[];
 }
 
-let finderIconCache: string | null = null;
-
 export default function SelectionSummary({ moduleIcon, items, onClean, cleanLabel = '清理' }: Omit<SelectionSummaryProps, 'moduleName'>) {
   const { clearSelection } = useAppStore();
   const totalSize = items.reduce((s, i) => s + (i.size ?? 0), 0);
-  const [finderIcon, setFinderIcon] = useState<string | null>(finderIconCache);
-
-  useEffect(() => {
-    if (!finderIconCache) {
-      getFinderIcon().then((icon) => { finderIconCache = icon; setFinderIcon(icon); });
-    }
-  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -47,7 +38,7 @@ export default function SelectionSummary({ moduleIcon, items, onClean, cleanLabe
       {/* Card list */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {items.map((item) => (
-          <SelectionCard key={item.path} item={item} finderIcon={finderIcon || finderIconCache} />
+          <SelectionCard key={item.path} item={item} />
         ))}
       </div>
 
@@ -65,7 +56,7 @@ export default function SelectionSummary({ moduleIcon, items, onClean, cleanLabe
   );
 }
 
-function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: string | null }) {
+function SelectionCard({ item }: { item: SelectionItem }) {
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
   const { isSelected } = useAppStore();
@@ -92,15 +83,7 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
             style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
             title="在访达中打开"
           >
-            {finderIcon ? (
-              <img src={finderIcon} alt="Finder" className="w-3.5 h-3.5" />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            )}
+            <span className="text-sm text-macos-text-tertiary">↗</span>
           </button>
           <span className="text-xs text-macos-text-tertiary">{formatBytes(item.size ?? 0)}</span>
         </div>
@@ -130,15 +113,7 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
             style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
             title="在访达中打开"
           >
-            {finderIcon ? (
-              <img src={finderIcon} alt="Finder" className="w-3.5 h-3.5" />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            )}
+            <span className="text-sm text-macos-text-tertiary">↗</span>
           </button>
           <span className="text-xs text-macos-text-tertiary">{children.length} 项 · {formatBytes(item.size ?? childSize)}</span>
         </div>
@@ -146,7 +121,7 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
       {expanded && (
         <div className="border-t border-macos-separator">
           {children.map((c) => (
-            <FileRow key={c.path} file={c} finderIcon={finderIcon} />
+            <FileRow key={c.path} file={c} />
           ))}
         </div>
       )}
@@ -154,7 +129,7 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
   );
 }
 
-function FileRow({ file, finderIcon }: { file: { name: string; path: string; size: number; isDir?: boolean }; finderIcon: string | null }) {
+function FileRow({ file }: { file: { name: string; path: string; size: number; isDir?: boolean } }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -172,15 +147,7 @@ function FileRow({ file, finderIcon }: { file: { name: string; path: string; siz
         style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
         title="在访达中打开"
       >
-        {finderIcon ? (
-          <img src={finderIcon} alt="Finder" className="w-3.5 h-3.5" />
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" y1="14" x2="21" y2="3" />
-          </svg>
-        )}
+        <span className="text-sm text-macos-text-tertiary">↗</span>
       </button>
       <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(file.size)}</span>
     </div>
