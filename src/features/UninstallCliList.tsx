@@ -173,12 +173,12 @@ export function UninstallCliDetail() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-3">
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg macos-icon-indigo flex items-center justify-center text-sm shrink-0">️</div>
             <div>
               <h2 className="text-sm font-bold">{tool.name}</h2>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2">
                 <span className={`rounded px-1.5 py-0.5 text-xs ${sourceColors[tool.source]}`}>{tool.source}</span>
                 <span className="text-xs text-macos-text-tertiary">v{tool.version}</span>
               </div>
