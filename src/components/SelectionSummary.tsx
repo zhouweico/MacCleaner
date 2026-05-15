@@ -67,27 +67,54 @@ export default function SelectionSummary({ moduleIcon, items, onClean, cleanLabe
 
 function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: string | null }) {
   const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const { isSelected } = useAppStore();
   const checked = isSelected(item.path);
   const children = item.children ?? [];
   const childSize = children.reduce((s, c) => s + c.size, 0);
   const hasChildren = children.length > 0;
 
-  // 单文件：平铺行，不可展开
+  // 单文件：平铺行
   if (!hasChildren) {
     return (
-      <div className={`flex items-center justify-between px-3 py-2.5 mb-1 rounded-lg hover:bg-macos-surface-hover ${checked ? 'bg-macos-surface-hover' : ''}`}>
+      <div
+        className={`flex items-center justify-between px-3 py-2.5 mb-1 rounded-lg hover:bg-macos-surface-hover ${checked ? 'bg-macos-surface-hover' : ''}`}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium truncate">{item.name}</span>
         </div>
-        <span className="text-xs text-macos-text-tertiary shrink-0 ml-2">{formatBytes(item.size ?? 0)}</span>
+        <div className="flex items-center gap-2 shrink-0 ml-2">
+          <button
+            onClick={() => showItemInFolder(item.path)}
+            className="shrink-0 p-0 rounded hover:bg-macos-surface-hover"
+            style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
+            title="在访达中打开"
+          >
+            {finderIcon ? (
+              <img src={finderIcon} alt="Finder" className="w-3.5 h-3.5" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            )}
+          </button>
+          <span className="text-xs text-macos-text-tertiary">{formatBytes(item.size ?? 0)}</span>
+        </div>
       </div>
     );
   }
 
   // 文件夹/多文件：可展开卡片
   return (
-    <div className="border border-macos-separator rounded-lg mb-2 overflow-hidden bg-macos-surface/50">
+    <div
+      className="border border-macos-separator rounded-lg mb-2 overflow-hidden bg-macos-surface/50"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div
         className={`flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-macos-surface-hover ${checked ? 'bg-macos-surface-hover' : ''}`}
         onClick={() => setExpanded(!expanded)}
@@ -97,6 +124,22 @@ function SelectionCard({ item, finderIcon }: { item: SelectionItem; finderIcon: 
           <span className="text-sm font-medium truncate">{item.name}</span>
         </div>
         <div className="flex items-center gap-3 shrink-0 ml-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); showItemInFolder(item.path); }}
+            className="shrink-0 p-0 rounded hover:bg-macos-surface-hover"
+            style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
+            title="在访达中打开"
+          >
+            {finderIcon ? (
+              <img src={finderIcon} alt="Finder" className="w-3.5 h-3.5" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            )}
+          </button>
           <span className="text-xs text-macos-text-tertiary">{children.length} 项 · {formatBytes(item.size ?? childSize)}</span>
         </div>
       </div>
