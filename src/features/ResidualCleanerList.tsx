@@ -5,7 +5,7 @@ import { formatBytes } from '@/lib/format';
 import type { AppInfo, CleanAction } from '@/types';
 
 function ResidualCleanerList() {
-  const { residuals, setResiduals, selectedItem, selectedPaths, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
+  const { residuals, setResiduals, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
   const lastAutoSelectPath = useRef('');
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
@@ -40,17 +40,6 @@ function ResidualCleanerList() {
     }
   }
 
-  async function handleClean() {
-    const actions: CleanAction[] = residuals
-      .filter(r => selectedPaths.has(r.path))
-      .flatMap(r => r.associatedFiles.map(f => ({ path: f.path, size: f.size, description: f.path })));
-
-    if (actions.length === 0) return;
-
-    await advancedClean('system-cache', actions);
-    await handleScan();
-  }
-
   function handleSelect(res: AppInfo, i: number) {
     const key = res.path || `${res.name}-${i}`;
     setSelectedItem({ ...res, path: key } as unknown as SelectedItem);
@@ -61,13 +50,6 @@ function ResidualCleanerList() {
     residuals.forEach(r => toggleSelection(r.path));
   }
 
-  function deselectAll() {
-    clearSelection();
-  }
-
-  const selectedCount = residuals.filter(r => isSelected(r.path)).length;
-  const selectedSize = residuals.filter(r => isSelected(r.path)).reduce((s, r) => s + r.size, 0);
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-macos-separator px-4 py-3">
@@ -76,14 +58,7 @@ function ResidualCleanerList() {
           <p className="text-xs text-macos-text-tertiary">{residuals.length} 项</p>
         </div>
         <div className="flex gap-1.5">
-          {selectedCount > 0 ? (
-            <>
-              <button onClick={deselectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">取消选择</button>
-              <button onClick={handleClean} className="rounded bg-macos-green px-2 py-1 text-xs font-medium hover:bg-macos-green-hover">清理 ({selectedPaths.size})</button>
-            </>
-          ) : (
-            <button onClick={selectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">全选</button>
-          )}
+          <button onClick={selectAll} className="rounded bg-macos-surface px-2 py-1 text-xs font-medium hover:bg-macos-surface-hover">全选</button>
         </div>
       </div>
       <p className="px-4 py-2 text-xs text-macos-text-tertiary">以下文件属于已卸载 APP 的残留</p>
@@ -100,7 +75,7 @@ function ResidualCleanerList() {
                     if (el) rowRefs.current.set(resKey, el);
                     else rowRefs.current.delete(resKey);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => handleSelect(res, i)}
                 >
                   <input
@@ -124,27 +99,53 @@ function ResidualCleanerList() {
           <p className="p-4 text-macos-text-tertiary">没有检测到残留文件</p>
         )}
       </div>
-
-      {selectedCount > 0 && (
-        <div className="border-t border-macos-separator px-4 py-2.5 bg-macos-content-light flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
-            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">个项目所选</span></span>
-          </div>
-          <button onClick={handleClean} className="rounded-lg bg-macos-green px-4 py-1.5 text-xs font-bold hover:bg-macos-green-hover">
-            清理
-          </button>
-        </div>
-      )}
     </div>
   );
 }
 
 export function ResidualCleanerDetail() {
-  const { selectedItem, residuals } = useAppStore();
-  if (!selectedItem) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
+  const { selectedItem, residuals, selectedPaths, setScanning, clearSelection } = useAppStore();
 
-  const residual = residuals.find(r => r.path === selectedItem.path) as AppInfo | undefined;
+  async function handleClean() {
+    if (selectedPaths.size === 0) return;
+    const actions: CleanAction[] = residuals
+      .filter(r => selectedPaths.has(r.path))
+      .flatMap(r => r.associatedFiles.map(f => ({ path: f.path, size: f.size, description: f.path })));
+    setScanning(true);
+    try {
+      await advancedClean('system-cache', actions);
+      clearSelection();
+    } finally { setScanning(false); }
+  }
+
+  if (!selectedItem && selectedPaths.size === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-macos-text-tertiary">
+        <p>选择一项以查看详情</p>
+      </div>
+    );
+  }
+
+  if (!selectedItem && selectedPaths.size > 0) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="border-b border-macos-separator px-4 py-4">
+          <div className="text-lg font-bold">已选 {selectedPaths.size} 项</div>
+        </div>
+        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
+          <p>已勾选的残留文件将批量清理</p>
+        </div>
+        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
+            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
+          </div>
+          <button onClick={handleClean} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green-hover">清理</button>
+        </div>
+      </div>
+    );
+  }
+
+  const residual = residuals.find(r => r.path === selectedItem?.path) as AppInfo | undefined;
   if (!residual) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
 
   return (
@@ -174,8 +175,11 @@ export function ResidualCleanerDetail() {
           ))}
         </div>
       </div>
-      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
-        <button onClick={() => {}} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green-hover">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
+        <div className="flex items-center gap-4">
+          <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
+        </div>
+        <button onClick={handleClean} className="rounded-lg bg-macos-green px-4 py-2 text-sm font-bold hover:bg-macos-green-hover">
           清理
         </button>
       </div>

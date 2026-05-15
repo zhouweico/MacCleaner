@@ -83,7 +83,7 @@ function UninstallCliList() {
                     if (el) rowRefs.current.set(toolKey, el);
                     else rowRefs.current.delete(toolKey);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer ${selected ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                   onClick={() => handleSelect(tool, i)}
                 >
                   <input
@@ -115,28 +115,67 @@ function UninstallCliList() {
 }
 
 export function UninstallCliDetail() {
-  const { selectedItem, cliTools } = useAppStore();
+  const { selectedItem, selectedPaths, cliTools, setCliTools, clearSelection } = useAppStore();
   const [uninstalling, setUninstalling] = useState(false);
-
-  if (!selectedItem) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
-
-  const tool = cliTools.find(t => t.path === selectedItem.path) ?? (selectedItem as unknown as { name: string; source: string; version: string; path: string; size?: number });
 
   async function handleUninstall() {
     setUninstalling(true);
     try {
-      await uninstallCliTool(tool.name, tool.source);
+      if (selectedPaths.size > 0) {
+        const tools = cliTools.filter(t => selectedPaths.has(t.path || `${t.source}:${t.name}`)) as CliTool[];
+        for (const tool of tools) {
+          await uninstallCliTool(tool.name, tool.source);
+        }
+        clearSelection();
+      } else if (selectedItem) {
+        const tool = cliTools.find(t => t.path === selectedItem.path) ?? (selectedItem as unknown as CliTool);
+        await uninstallCliTool(tool.name, tool.source);
+      }
+      const result = await window.electronAPI.ipc.invoke('scan:cli-tools');
+      setCliTools(result as { name: string; source: string; version: string; path: string; size?: number }[]);
     } finally {
       setUninstalling(false);
     }
   }
+
+  if (!selectedItem && selectedPaths.size === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-macos-text-tertiary">
+        <p>选择一项以查看详情</p>
+      </div>
+    );
+  }
+
+  if (!selectedItem && selectedPaths.size > 0) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="border-b border-macos-separator px-4 py-4">
+          <div className="text-lg font-bold">已选 {selectedPaths.size} 项</div>
+        </div>
+        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
+          <p>已勾选的 CLI 工具将批量卸载</p>
+        </div>
+        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
+            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
+          </div>
+          <button onClick={handleUninstall} disabled={uninstalling} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50">
+            {uninstalling ? '卸载中...' : '卸载'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const tool = cliTools.find(t => t.path === selectedItem!.path) ?? (selectedItem as unknown as { name: string; source: string; version: string; path: string; size?: number });
+  const selectedCount = selectedPaths.size;
 
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg macos-icon-indigo flex items-center justify-center text-xl shrink-0">🖥️</div>
+            <div className="w-10 h-10 rounded-lg macos-icon-indigo flex items-center justify-center text-xl shrink-0">️</div>
             <div>
               <h2 className="text-lg font-bold">{tool.name}</h2>
               <div className="flex items-center gap-2 mt-1">
@@ -156,7 +195,10 @@ export function UninstallCliDetail() {
           <div className="flex justify-between"><span className="text-macos-text-secondary">来源</span><span>{tool.source}</span></div>
         </div>
       </div>
-      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex justify-end">
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
+        <div className="flex items-center gap-4">
+          <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
+        </div>
         <button
           onClick={handleUninstall}
           disabled={uninstalling}

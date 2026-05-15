@@ -203,7 +203,7 @@ function UninstallAppsList() {
                     else rowRefs.current.delete(app.path);
                   }}
                   onClick={() => handleSelectApp(app)}
-                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${selected ? 'bg-macos-accent/15' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
+                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${selected ? 'bg-macos-selection' : 'hover:bg-macos-surface-hover'} ${i > 0 ? 'border-t border-macos-separator' : ''}`}
                 >
                   <input
                     type="checkbox"
@@ -240,9 +240,55 @@ function UninstallAppsList() {
 }
 
 export function UninstallAppsDetail() {
-  const { selectedItem, setSelectedItem, setApps } = useAppStore();
+  const { selectedItem, selectedPaths, apps, setApps, setSelectedItem, clearSelection, setScanning } = useAppStore();
   const [keepUserData, setKeepUserData] = useState(true);
   const [checkedFiles, setCheckedFiles] = useState<Set<string>>(new Set());
+
+  if (!selectedItem && selectedPaths.size === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-macos-text-tertiary">
+        <p>选择一项以查看详情</p>
+      </div>
+    );
+  }
+
+  if (!selectedItem && selectedPaths.size > 0) {
+    async function handleBatchUninstall() {
+      setScanning(true);
+      try {
+        const appPaths = Array.from(selectedPaths);
+        for (const appPath of appPaths) {
+          const app = apps.find(a => a.path === appPath);
+          if (app) {
+            const allPaths = [app.path, ...app.associatedFiles.map(f => f.path)];
+            await uninstallApp(app.path, allPaths, true);
+          }
+        }
+        clearSelection();
+        const result = await scanApps();
+        setApps(result);
+      } finally {
+        setScanning(false);
+      }
+    }
+
+    return (
+      <div className="flex h-full flex-col">
+        <div className="border-b border-macos-separator px-4 py-4">
+          <div className="text-lg font-bold">已选 {selectedPaths.size} 项</div>
+        </div>
+        <div className="flex-1 flex items-center justify-center text-macos-text-tertiary">
+          <p>已勾选的应用将批量卸载</p>
+        </div>
+        <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
+            <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>
+          </div>
+          <button onClick={handleBatchUninstall} className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover">卸载</button>
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedItem || !('associatedFiles' in selectedItem)) {
     return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
@@ -340,27 +386,25 @@ export function UninstallAppsDetail() {
       </div>
 
       {/* Bottom action bar */}
-      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm">
-            <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
-            <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">个项目所选</span></span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="rounded-lg bg-macos-surface px-4 py-2 text-sm font-medium hover:bg-macos-surface-hover"
-            >
-              取消
-            </button>
-            <button
-              onClick={handleUninstall}
-              disabled={selectedCount === 0}
-              className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
-            >
-              卸载
-            </button>
-          </div>
+      <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
+        <div className="flex items-center gap-4">
+          <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
+          <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSelectedItem(null)}
+            className="rounded-lg bg-macos-surface px-4 py-2 text-sm font-medium hover:bg-macos-surface-hover"
+          >
+            取消
+          </button>
+          <button
+            onClick={handleUninstall}
+            disabled={selectedCount === 0}
+            className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
+          >
+            卸载
+          </button>
         </div>
       </div>
     </div>
