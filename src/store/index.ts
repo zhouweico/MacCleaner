@@ -116,7 +116,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectItem: (path, item) => set({ selectedPaths: new Set([path]), selectedItem: item ?? null }),
   clearSelection: () => set({ selectedPaths: new Set(), selectedItem: null }),
   isSelected: (path) => get().selectedPaths.has(path),
-  selectAll: (paths: string[]) => set({ selectedPaths: new Set(paths) }),
+  selectAll: (paths: string[]) => set({ selectedPaths: new Set(paths), selectedItem: null }),
 
   get totalCleanable() {
     return Object.values(this.scanResults).reduce<number>(
