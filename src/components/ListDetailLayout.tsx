@@ -7,7 +7,8 @@ interface ListDetailLayoutProps {
 }
 
 function ListDetailLayout({ list, detail, listWidth = 'w-[35%]' }: ListDetailLayoutProps) {
-  const { selectedItem } = useAppStore();
+  const { selectedItem, selectedPaths } = useAppStore();
+  const hasSelection = selectedItem || selectedPaths.size > 0;
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -21,7 +22,7 @@ function ListDetailLayout({ list, detail, listWidth = 'w-[35%]' }: ListDetailLay
       {/* 右边栏 */}
       <div className="flex-1 flex flex-col overflow-hidden bg-macos-content-light">
         <div className="flex-1 overflow-y-auto">
-          {selectedItem ? detail : <EmptyDetail />}
+          {hasSelection ? detail : <EmptyDetail />}
         </div>
       </div>
     </div>
