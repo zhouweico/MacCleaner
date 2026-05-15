@@ -79,7 +79,7 @@ export default function CollapsibleFileSection({
       {expanded && (
         <div className="border-t border-macos-separator">
           {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-macos-surface-hover/30 text-xs group">
+            <div key={i} className="flex items-center gap-2 px-4 py-2 hover:bg-macos-surface-hover text-xs group">
               {showCheckbox && onToggleFile && (
                 <input
                   type="checkbox"
@@ -98,9 +98,10 @@ export default function CollapsibleFileSection({
                 {iconSrc ? (
                   <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
                   </svg>
                 )}
               </button>

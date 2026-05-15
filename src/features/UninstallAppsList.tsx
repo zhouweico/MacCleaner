@@ -96,22 +96,21 @@ function CollapsibleSection({ title, files, checkedFiles, onToggleFile, defaultE
               />
               <span className="text-macos-text-tertiary shrink-0">{f.type === 'binary' ? '⚙️' : f.type === 'cache' ? '🗂️' : '📁'}</span>
               <span className="text-macos-text-primary truncate flex-1 min-w-0">{f.path}</span>
-              {(f.type === 'support' || f.type === 'container' || f.type === 'hiddenDir') && (
-                <button
-                  onClick={() => handleOpenFinder(f.path)}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0 rounded hover:bg-macos-surface-hover"
-                  title="在访达中打开"
-                >
-                  {iconSrc ? (
-                    <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-macos-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                      <rect x="9" y="3" width="6" height="4" rx="1" />
-                    </svg>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={() => handleOpenFinder(f.path)}
+                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-0 rounded hover:bg-macos-surface-hover"
+                title="在访达中打开"
+              >
+                {iconSrc ? (
+                  <img src={iconSrc} alt="Finder" className="w-3.5 h-3.5" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                )}
+              </button>
               <span className="text-macos-text-tertiary shrink-0 ml-2">{formatBytes(f.size)}</span>
             </div>
           ))}
