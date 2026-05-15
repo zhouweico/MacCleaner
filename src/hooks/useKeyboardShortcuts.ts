@@ -11,7 +11,7 @@ interface ShortcutConfig {
 
 const DEFAULT_SHORTCUTS: ShortcutConfig = {
   selectAll: 'meta+a',
-  rescan: 'meta+shift+r',
+  rescan: 'meta+r',
 };
 
 function matchShortcut(e: KeyboardEvent, shortcut: string): boolean {
