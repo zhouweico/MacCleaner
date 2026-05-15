@@ -68,21 +68,20 @@ function SettingsView() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-macos-content px-8 py-6">
+    <div className="flex h-full flex-col overflow-y-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">⚙️ 设置</h1>
-        <p className="mt-1 text-sm text-macos-text-tertiary">自定义 MacCleaner 的行为和外观</p>
+      <div className="mb-4">
+        <h1 className="text-lg font-bold">⚙️ 设置</h1>
+        <p className="mt-0.5 text-xs text-macos-text-tertiary">自定义 MacCleaner 的行为和外观</p>
       </div>
 
       {/* Schedule card */}
-      <div className="rounded-xl bg-macos-surface mb-4 overflow-hidden">
-        <div className="px-4 py-3 border-b border-macos-separator">
-          <h2 className="text-sm font-semibold text-macos-text-tertiary uppercase tracking-wide">定时扫描</h2>
+      <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-macos-separator">
+          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">定时扫描</h2>
         </div>
         <div className="px-4">
-          {/* Enable toggle */}
-          <div className="flex items-center justify-between py-3 border-b border-macos-separator">
+          <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
             <div>
               <div className="text-sm font-medium">启用每日自动扫描</div>
               <div className="text-xs text-macos-text-tertiary">每天在指定时间自动扫描系统</div>
@@ -90,7 +89,7 @@ function SettingsView() {
             <ToggleSwitch checked={scheduleEnabled} onChange={setScheduleEnabled} />
           </div>
           {scheduleEnabled && (
-            <div className="flex items-center justify-between py-3">
+            <div className="flex items-center justify-between py-2.5">
               <div>
                 <div className="text-sm font-medium">扫描时间</div>
               </div>
@@ -106,13 +105,12 @@ function SettingsView() {
       </div>
 
       {/* AI card */}
-      <div className="rounded-xl bg-macos-surface mb-4 overflow-hidden">
-        <div className="px-4 py-3 border-b border-macos-separator">
-          <h2 className="text-sm font-semibold text-macos-text-tertiary uppercase tracking-wide">AI 增强分析</h2>
+      <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-macos-separator">
+          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">AI 增强分析</h2>
         </div>
         <div className="px-4">
-          {/* Enable toggle */}
-          <div className="flex items-center justify-between py-3 border-b border-macos-separator">
+          <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
             <div>
               <div className="text-sm font-medium">启用 AI 分析</div>
               <div className="text-xs text-macos-text-tertiary">使用本地 AI 模型分析可清理内容</div>
@@ -120,7 +118,7 @@ function SettingsView() {
             <ToggleSwitch checked={aiEnabled} onChange={setAiEnabled} />
           </div>
           {aiEnabled && (
-            <div className="py-3">
+            <div className="py-2.5">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium">Ollama 地址</div>
@@ -140,10 +138,10 @@ function SettingsView() {
       </div>
 
       {/* Save button */}
-      <div className="flex justify-end mt-4">
+      <div className="flex justify-end mt-3">
         <button
           onClick={handleSave}
-          className="rounded-lg bg-macos-accent px-6 py-2 text-sm font-medium hover:bg-macos-accent-hover transition-colors"
+          className="rounded bg-macos-accent px-3 py-1.5 text-xs font-medium hover:bg-macos-accent-hover transition-colors"
         >
           {saved ? '已保存 ✓' : '保存设置'}
         </button>

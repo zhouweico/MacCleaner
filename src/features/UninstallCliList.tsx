@@ -168,8 +168,14 @@ export function UninstallCliDetail() {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg macos-icon-indigo flex items-center justify-center text-sm shrink-0">️</div>
             <div>
-              <h2 className="text-sm font-bold">{tool.name}</h2>
-              <p className="text-xs text-macos-text-tertiary">{tool.source} v{tool.version}</p>
+              <div className="text-sm font-bold">{tool.name}</div>
+              <div className="text-xs text-macos-text-tertiary">{tool.source} v{tool.version}</div>
+            </div>
+          </div>
+          {tool.size && (
+            <div className="text-right shrink-0">
+              <div className="text-sm font-bold">{formatBytes(tool.size)}</div>
+            </div>
           )}
         </div>
       </div>
