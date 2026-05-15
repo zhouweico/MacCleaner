@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type Dispatch, type SetStateAction } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanApps, scanAppAssociated, uninstallApp, showItemInFolder, getFinderIcon } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -247,6 +247,7 @@ export function UninstallAppsDetail() {
   const [keepUserData, setKeepUserData] = useState(true);
   const [checkedFiles, setCheckedFiles] = useState<Set<string>>(new Set());
 
+  // 无选中状态
   if (!selectedItem && selectedPaths.size === 0) {
     return (
       <div className="flex h-full items-center justify-center text-macos-text-tertiary">
@@ -255,6 +256,7 @@ export function UninstallAppsDetail() {
     );
   }
 
+  // 批量选中
   if (!selectedItem && selectedPaths.size > 0) {
     async function handleBatchUninstall() {
       setScanning(true);
@@ -293,17 +295,31 @@ export function UninstallAppsDetail() {
     );
   }
 
-  if (!selectedItem || !('associatedFiles' in selectedItem)) {
-    return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
-  }
-
+  // 单项详情
   const app = selectedItem as unknown as AppInfo;
-  if (!app || !app.associatedFiles) {
-    return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
-  }
 
-  const totalSize = app.size + app.associatedFiles.reduce((s, f) => s + f.size, 0);
+  return (
+    <AppDetailContent app={app} keepUserData={keepUserData} setKeepUserData={setKeepUserData}
+      checkedFiles={checkedFiles} setCheckedFiles={setCheckedFiles}
+      setSelectedItem={setSelectedItem} scanApps={() => scanApps().then(setApps)} />
+  );
+}
+
+function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, setCheckedFiles, setSelectedItem, scanApps }: {
+  app: AppInfo;
+  keepUserData: boolean;
+  setKeepUserData: (v: boolean) => void;
+  checkedFiles: Set<string>;
+  setCheckedFiles: Dispatch<SetStateAction<Set<string>>>;
+  setSelectedItem: (item: SelectedItem | null) => void;
+  scanApps: () => void;
+}) {
   const fileGroups = groupFilesByType(app.associatedFiles);
+  const totalSize = app.size + app.associatedFiles.reduce((s, f) => s + f.size, 0);
+  const selectedCount = checkedFiles.size;
+  const selectedSize = Array.from(checkedFiles)
+    .map(p => app.associatedFiles.find(f => f.path === p)?.size ?? 0)
+    .reduce((s, v) => s + v, 0);
 
   function toggleFile(path: string, checked: boolean) {
     setCheckedFiles(prev => {
@@ -321,18 +337,12 @@ export function UninstallAppsDetail() {
     }
   }, [app.path]);
 
-  const selectedCount = checkedFiles.size;
-  const selectedSize = Array.from(checkedFiles)
-    .map(p => app.associatedFiles.find(f => f.path === p)?.size ?? 0)
-    .reduce((s, v) => s + v, 0);
-
   async function handleUninstall() {
     const paths = Array.from(checkedFiles);
     await uninstallApp(app.path, paths, keepUserData);
     setSelectedItem(null);
     setCheckedFiles(new Set());
-    const result = await scanApps();
-    setApps(result);
+    scanApps();
   }
 
   return (
@@ -370,7 +380,6 @@ export function UninstallAppsDetail() {
 
       {/* File groups */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        {/* App binary */}
         <CollapsibleSection
           title="可执行文件"
           files={[{ path: app.path, type: 'binary' as any, size: app.size }]}
@@ -379,7 +388,6 @@ export function UninstallAppsDetail() {
           defaultExpanded
         />
 
-        {/* Associated files grouped by type */}
         {Object.entries(fileGroups).map(([groupName, files]) => (
           <CollapsibleSection
             key={groupName}
