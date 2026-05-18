@@ -80,3 +80,42 @@ export async function getFinderIcon(): Promise<string> {
   const result = await window.electronAPI.ipc.invoke('finder:icon') as { iconDataUri: string };
   return result.iconDataUri;
 }
+
+export interface OperationLogEntry {
+  timestamp: string;
+  type: 'clean' | 'uninstall' | 'trash' | 'scan';
+  module: string;
+  freedSpace: number;
+  success: boolean;
+  error?: string;
+  details?: string;
+}
+
+export async function getOperationLogs(): Promise<OperationLogEntry[]> {
+  return window.electronAPI.ipc.invoke('log:get') as Promise<OperationLogEntry[]>;
+}
+
+export async function clearOperationLogs(): Promise<boolean> {
+  return window.electronAPI.ipc.invoke('log:clear') as Promise<boolean>;
+}
+
+export interface AiAnalysisResult {
+  software: string;
+  category: 'cache' | 'config' | 'data' | 'log' | 'unknown';
+  safeToDelete: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  description: string;
+  recommendedAction: string;
+}
+
+export async function aiAnalyze(dirPath: string, ollamaUrl?: string): Promise<AiAnalysisResult> {
+  return window.electronAPI.ipc.invoke('ai:analyze', dirPath, ollamaUrl) as Promise<AiAnalysisResult>;
+}
+
+export function showAbout() {
+  window.electronAPI.ipc.send('app:about');
+}
+
+export async function getAppInfo(): Promise<{ name: string; version: string; description: string; electron: string; node: string }> {
+  return window.electronAPI.ipc.invoke('app:info') as Promise<{ name: string; version: string; description: string; electron: string; node: string }>;
+}

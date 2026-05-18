@@ -11,6 +11,7 @@
     "build:mac": "electron-builder --mac"
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
@@ -19,7 +20,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",
-    "electron": "^33.0.0",
+    "electron": "^33.4.11",
     "electron-builder": "^25.0.0",
     "postcss": "^8.4.0",
     "react": "^19.0.0",

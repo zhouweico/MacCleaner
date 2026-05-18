@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import { resolve } from 'path';
+import { copyFileSync } from 'fs';
 
 function forceCjsFormat(entryName: string): Plugin {
   return {
@@ -12,6 +13,18 @@ function forceCjsFormat(entryName: string): Plugin {
         config.build.lib.formats = ['cjs'];
         config.build.lib.fileName = () => `${entryName}.cjs`;
       }
+    },
+  };
+}
+
+function copyAboutHtml(): Plugin {
+  return {
+    name: 'copy-about-html',
+    closeBundle() {
+      copyFileSync(
+        resolve(__dirname, 'electron/about.html'),
+        resolve(__dirname, 'dist-electron/about.html'),
+      );
     },
   };
 }
@@ -29,7 +42,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
           },
-          plugins: [forceCjsFormat('main')],
+          plugins: [forceCjsFormat('main'), copyAboutHtml()],
         },
       },
       {

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    background: #2a2a2a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 30px 24px;
+    text-align: center;
+    overflow: hidden;
+    -webkit-app-region: drag;
+  }
+  .icon {
+    width: 84px; height: 84px;
+    border-radius: 18px;
+    margin-bottom: 16px;
+    object-fit: contain;
+  }
+  .app-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .version {
+    font-size: 12px;
+    color: #999;
+  }
+  .versions {
+    margin: 16px 0;
+    width: 100%;
+    max-width: 200px;
+  }
+  .versions div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    padding: 3px 0;
+    border-bottom: 1px solid #333;
+  }
+  .versions .k { color: #ebebf599; }
+  .versions .v { color: #f5f5f7; }
+  .copyright {
+    font-size: 11px;
+    color: #ebebf54d;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<img id="app-icon" class="icon" src="">
+<div class="app-name">MacCleaner</div>
+<div id="app-version" class="version"></div>
+<div class="versions">
+  <div><span class="k">Electron</span><span id="ver-electron" class="v"></span></div>
+  <div><span class="k">Node.js</span><span id="ver-node" class="v"></span></div>
+  <div><span class="k">Chromium</span><span id="ver-chrome" class="v"></span></div>
+  <div><span class="k">V8</span><span id="ver-v8" class="v"></span></div>
+</div>
+<div class="copyright">© 2026 ZHOUWEI</div>
+
+<script>
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const iconData = params.get('icon');
+    const version = params.get('version');
+    if (iconData) document.getElementById('app-icon').src = decodeURIComponent(iconData);
+    if (version) document.getElementById('app-version').textContent = '版本 ' + version;
+    document.getElementById('ver-electron').textContent = params.get('electron') || '';
+    document.getElementById('ver-node').textContent = params.get('node') || '';
+    document.getElementById('ver-chrome').textContent = params.get('chrome') || '';
+    document.getElementById('ver-v8').textContent = params.get('v8') || '';
+  })();
+</script>
+</body>
+</html>

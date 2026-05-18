@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { registerSchedule } from '@/lib/ipc';
+import { registerSchedule, getOperationLogs, clearOperationLogs, getAppInfo } from '@/lib/ipc';
 import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import AutoHideScroll from '@/components/AutoHideScroll';
+import type { OperationLogEntry } from '@/lib/ipc';
+import { formatBytes } from '@/lib/format';
 
 const STORAGE_KEY = 'maccleaner-settings';
 
@@ -65,11 +67,14 @@ function SettingsView() {
   const [scheduleEnabled, setScheduleEnabled] = useState(() => loadSettings().scheduleEnabled);
   const [aiEnabled, setAiEnabled] = useState(() => loadSettings().aiEnabled);
   const [ollamaUrl, setOllamaUrl] = useState(() => loadSettings().ollamaUrl);
-  const [saved, setSaved] = useState(false);
+  const [ollamaTestStatus, setOllamaTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
   const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
     const s = loadSettings();
     return s.shortcutEnabled ?? { selectAll: true, rescan: true };
   });
+  const [logs, setLogs] = useState<OperationLogEntry[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [appInfo, setAppInfo] = useState<{ version: string; electron: string; node: string } | null>(null);
 
   useEffect(() => {
     const s = loadSettings();
@@ -78,40 +83,98 @@ function SettingsView() {
     setAiEnabled(s.aiEnabled);
     setOllamaUrl(s.ollamaUrl);
     setShortcutEnabled(s.shortcutEnabled ?? { selectAll: true, rescan: true });
+    loadLogs();
+    getAppInfo().then(info => setAppInfo(info));
   }, []);
 
-  async function handleSave() {
-    saveSettings({ scanTime, scheduleEnabled, aiEnabled, ollamaUrl, shortcutEnabled });
-    if (scheduleEnabled) {
+  function handleScheduleChange(enabled: boolean) {
+    setScheduleEnabled(enabled);
+    const current = loadSettings();
+    saveSettings({ ...current, scheduleEnabled: enabled });
+    if (enabled) {
       const [hour, minute] = scanTime.split(':');
-      await registerSchedule(`${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`);
+      registerSchedule(`${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`);
+    } else {
+      window.electronAPI.ipc.invoke('schedule:stop');
     }
     window.dispatchEvent(new Event('settings-changed'));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleScanTimeChange(time: string) {
+    setScanTime(time);
+    const current = loadSettings();
+    saveSettings({ ...current, scanTime: time });
+    if (scheduleEnabled) {
+      const [hour, minute] = time.split(':');
+      registerSchedule(`${parseInt(minute, 10)} ${parseInt(hour, 10)} * * *`);
+    }
+  }
+
+  function handleAiChange(enabled: boolean) {
+    setAiEnabled(enabled);
+    const current = loadSettings();
+    saveSettings({ ...current, aiEnabled: enabled });
+    window.dispatchEvent(new Event('settings-changed'));
+  }
+
+  function handleOllamaUrlChange(url: string) {
+    setOllamaUrl(url);
+    const current = loadSettings();
+    saveSettings({ ...current, ollamaUrl: url });
+    window.dispatchEvent(new Event('settings-changed'));
   }
 
   function toggleShortcut(key: string) {
     setShortcutEnabled(prev => {
       const next = { ...prev, [key]: !prev[key] };
-      // Save immediately so hook picks it up
-      const s = loadSettings();
-      saveSettings({ ...s, shortcutEnabled: next });
+      const current = loadSettings();
+      saveSettings({ ...current, shortcutEnabled: next });
       window.dispatchEvent(new Event('settings-changed'));
       return next;
     });
   }
 
-  return (
-    <AutoHideScroll className="flex h-full flex-col">
-      {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-lg font-bold">⚙️ 设置</h1>
-        <p className="mt-0.5 text-xs text-macos-text-tertiary">自定义 MacCleaner 的行为和外观</p>
-      </div>
+  async function loadLogs() {
+    setLogsLoading(true);
+    try {
+      const entries = await getOperationLogs();
+      setLogs(entries.reverse()); // newest first
+    } finally {
+      setLogsLoading(false);
+    }
+  }
 
-      {/* Schedule card */}
-      <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+  async function handleClearLogs() {
+    await clearOperationLogs();
+    setLogs([]);
+  }
+
+  async function testOllamaConnection() {
+    setOllamaTestStatus('testing');
+    try {
+      const resp = await fetch(ollamaUrl, { method: 'GET' });
+      if (resp.ok || resp.status === 404) {
+        setOllamaTestStatus('ok');
+      } else {
+        setOllamaTestStatus('fail');
+      }
+    } catch {
+      setOllamaTestStatus('fail');
+    }
+    setTimeout(() => setOllamaTestStatus('idle'), 3000);
+  }
+
+  return (
+    <AutoHideScroll className="flex flex-col overflow-y-auto h-full">
+      <div className="flex-1 min-w-0 p-4">
+        {/* Header */}
+        <div className="mb-4">
+          <h1 className="text-lg font-bold">⚙️ 设置</h1>
+          <p className="mt-0.5 text-xs text-macos-text-tertiary">自定义 MacCleaner 的行为和外观</p>
+        </div>
+
+        {/* Schedule card */}
+        <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-macos-separator">
           <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">定时扫描</h2>
         </div>
@@ -121,7 +184,7 @@ function SettingsView() {
               <div className="text-sm font-medium">启用每日自动扫描</div>
               <div className="text-xs text-macos-text-tertiary">每天在指定时间自动扫描系统</div>
             </div>
-            <ToggleSwitch checked={scheduleEnabled} onChange={setScheduleEnabled} />
+            <ToggleSwitch checked={scheduleEnabled} onChange={handleScheduleChange} />
           </div>
           {scheduleEnabled && (
             <div className="flex items-center justify-between py-2.5">
@@ -131,7 +194,7 @@ function SettingsView() {
               <input
                 type="time"
                 value={scanTime}
-                onChange={(e) => setScanTime(e.target.value)}
+                onChange={(e) => handleScanTimeChange(e.target.value)}
                 className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
               />
             </div>
@@ -150,7 +213,7 @@ function SettingsView() {
               <div className="text-sm font-medium">启用 AI 分析</div>
               <div className="text-xs text-macos-text-tertiary">使用本地 AI 模型分析可清理内容</div>
             </div>
-            <ToggleSwitch checked={aiEnabled} onChange={setAiEnabled} />
+            <ToggleSwitch checked={aiEnabled} onChange={handleAiChange} />
           </div>
           {aiEnabled && (
             <div className="py-2.5">
@@ -159,14 +222,26 @@ function SettingsView() {
                   <div className="text-sm font-medium">Ollama 地址</div>
                   <div className="text-xs text-macos-text-tertiary">本地 Ollama 服务地址</div>
                 </div>
-                <input
-                  type="text"
-                  value={ollamaUrl}
-                  onChange={(e) => setOllamaUrl(e.target.value)}
-                  placeholder="http://localhost:11434"
-                  className="w-64 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={ollamaUrl}
+                    onChange={(e) => handleOllamaUrlChange(e.target.value)}
+                    placeholder="http://localhost:11434"
+                    className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                  />
+                  <button
+                    onClick={testOllamaConnection}
+                    disabled={ollamaTestStatus === 'testing'}
+                    className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                  >
+                    {ollamaTestStatus === 'testing' ? '测试中' :
+                     ollamaTestStatus === 'ok' ? '✓ 已连接' :
+                     ollamaTestStatus === 'fail' ? '✗ 失败' : '测试连接'}
+                  </button>
+                </div>
               </div>
+              <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，不会产生后台费用</p>
             </div>
           )}
         </div>
@@ -201,14 +276,78 @@ function SettingsView() {
         </div>
       </div>
 
-      {/* Save button */}
-      <div className="flex justify-end mt-3">
-        <button
-          onClick={handleSave}
-          className="rounded bg-macos-accent px-3 py-1.5 text-xs font-medium hover:bg-macos-accent-hover transition-colors"
-        >
-          {saved ? '已保存 ✓' : '保存设置'}
-        </button>
+      {/* Operation Log card */}
+      <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-macos-separator flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">操作日志</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={loadLogs}
+              disabled={logsLoading}
+              className="text-xs text-macos-accent hover:text-macos-accent-hover disabled:opacity-40"
+            >
+              {logsLoading ? '加载中...' : '刷新'}
+            </button>
+            {logs.length > 0 && (
+              <button
+                onClick={handleClearLogs}
+                className="text-xs text-macos-red hover:text-macos-red-hover"
+              >
+                清空
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="px-4 max-h-48 overflow-y-auto">
+          {logs.length === 0 ? (
+            <p className="py-3 text-xs text-macos-text-tertiary text-center">暂无操作记录</p>
+          ) : (
+            logs.map((log, idx) => {
+              const typeLabel: Record<string, string> = {
+                clean: '🧹 清理',
+                uninstall: '🗑️ 卸载',
+                trash: '🗑️ 废纸篓',
+                scan: '📋 扫描',
+              };
+              const time = new Date(log.timestamp).toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+              return (
+                <div key={idx} className={`py-2 ${idx > 0 ? 'border-t border-macos-separator' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-macos-text-secondary truncate">{log.module}</span>
+                    <span className={`text-xs font-medium shrink-0 ml-2 ${log.success ? 'text-macos-green' : 'text-macos-red'}`}>
+                      {log.success ? '成功' : '失败'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-xs text-macos-text-tertiary">{typeLabel[log.type] ?? log.type}</span>
+                    <span className="text-xs text-macos-text-tertiary">{time}</span>
+                  </div>
+                  {log.freedSpace > 0 && (
+                    <div className="text-xs text-macos-text-tertiary mt-0.5">{formatBytes(log.freedSpace)}</div>
+                  )}
+                  {log.details && (
+                    <div className="text-xs text-macos-text-tertiary mt-0.5">{log.details}</div>
+                  )}
+                  {log.error && (
+                    <div className="text-xs text-macos-red mt-0.5" title={log.error}>{log.error}</div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Version info */}
+      <div className="mt-3 text-center">
+        <p className="text-xs text-macos-text-tertiary">MacCleaner v{appInfo?.version ?? '...'}</p>
+        <p className="text-[10px] text-macos-text-tertiary mt-0.5">Electron {appInfo?.electron} · Node {appInfo?.node}</p>
+      </div>
       </div>
     </AutoHideScroll>
   );

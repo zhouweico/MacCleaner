@@ -5,6 +5,17 @@ import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
+/**
+ * Safe logger that catches EPIPE errors from broken stdout pipes in Electron.
+ */
+function log(...args: unknown[]) {
+  try { console.log(...args); } catch { /* EPIPE — stdout pipe closed, ignore */ }
+}
+
+function logError(...args: unknown[]) {
+  try { console.error(...args); } catch { /* EPIPE — ignore */ }
+}
+
 let finderIconDataUri: string | null = null;
 
 async function getFinderIconDataUri(): Promise<string> {
@@ -26,7 +37,7 @@ async function getFinderIconDataUri(): Promise<string> {
       }
     }
   } catch (e) {
-    console.error('[finder] get icon failed:', e);
+    logError('[finder] get icon failed:', e);
   }
 
   // Fallback: use a simple Finder-like SVG as data URI
@@ -36,16 +47,16 @@ async function getFinderIconDataUri(): Promise<string> {
 
 export function registerScanHandlers() {
   ipcMain.handle('scan:all', async () => {
-    console.log('[scan] scan:all started');
+    log('[scan] scan:all started');
     const result = await scanAllModules();
-    console.log('[scan] scan:all completed, modules:', Object.keys(result).length);
+    log('[scan] scan:all completed, modules:', Object.keys(result).length);
     return result;
   });
 
   ipcMain.handle('scan:module', async (_event, moduleId: string) => {
-    console.log('[scan] scan:module:', moduleId);
+    log('[scan] scan:module:', moduleId);
     const result = await scanModule(moduleId as ModuleId);
-    console.log('[scan] scan:module done:', moduleId, '- items:', result.itemCount, 'size:', result.totalSize);
+    log('[scan] scan:module done:', moduleId, '- items:', result.itemCount, 'size:', result.totalSize);
     return result;
   });
 
@@ -61,7 +72,7 @@ export function registerScanHandlers() {
         return { total, used, available, usagePercent: Math.round((used / total) * 100) };
       }
     } catch (e) {
-      console.error('[disk] get info failed:', e);
+      logError('[disk] get info failed:', e);
     }
     return null;
   });
@@ -71,7 +82,7 @@ export function registerScanHandlers() {
       shell.showItemInFolder(filePath);
       return { success: true };
     } catch (e) {
-      console.error('[finder] showItemInFolder failed:', e);
+      logError('[finder] showItemInFolder failed:', e);
       return { success: false, error: String(e) };
     }
   });

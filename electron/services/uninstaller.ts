@@ -1,12 +1,45 @@
 import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { extractAppIcon } from '../utils/extractAppIcon';
 import type { AppInfo, AssociatedFile, CleanResult } from '../types';
-import { readdir, stat } from 'fs/promises';
-import { join } from 'path';
+import { readdir, stat, readFile } from 'fs/promises';
+import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const home = homedir();
+
+// Protected directories that should never be marked for deletion
+const PROTECTED_DIRS = new Set([
+  '.ssh', '.gnupg', '.keychain', '.pki', '.aws', '.azure', '.gcp',
+]);
+
+/**
+ * Generate matching variants of an app name for hidden directory matching.
+ * e.g. "App Cleaner 8" → ["appcleaner8", "app-cleaner-8", "app_cleaner_8", "appcleaner"]
+ */
+function generateAppVariants(appName: string): string[] {
+  const base = appName.replace('.app', '').toLowerCase();
+  const variants = new Set<string>();
+  variants.add(base);
+  variants.add(base.replace(/\s+/g, ''));
+  variants.add(base.replace(/\s+/g, '-'));
+  variants.add(base.replace(/\s+/g, '_'));
+  // Remove version numbers
+  variants.add(base.replace(/[\s\d]+$/g, '').replace(/\s+/g, ''));
+  variants.add(base.replace(/[\s\d]+$/g, '').replace(/\s+/g, '-'));
+  return Array.from(variants);
+}
+
+/**
+ * Extract the tool name from a bundle ID for ~/.xxx matching.
+ * e.g. "com.microsoft.VSCode" → "vscode"
+ */
+function bundleIdToToolName(bundleId: string): string {
+  const parts = bundleId.split('.');
+  return (parts[parts.length - 1] ?? '').toLowerCase();
+}
 
 export async function scanApps(): Promise<AppInfo[]> {
   const appsDir = '/Applications';
@@ -42,7 +75,8 @@ export async function scanApps(): Promise<AppInfo[]> {
 
 export async function findAssociatedFiles(bundleId: string, appName: string): Promise<AssociatedFile[]> {
   const files: AssociatedFile[] = [];
-  const appNameLower = appName.replace('.app', '').toLowerCase();
+  const appVariants = generateAppVariants(appName);
+  const bundleToolName = bundleId ? bundleIdToToolName(bundleId) : '';
 
   const searchPaths = [
     { dir: join(home, 'Library', 'Application Support'), type: 'support' as const },
@@ -58,12 +92,10 @@ export async function findAssociatedFiles(bundleId: string, appName: string): Pr
       const entries = await readdir(dir);
       for (const entry of entries) {
         const entryLower = entry.toLowerCase();
-        if (
+        const matches =
           (bundleId && entryLower.includes(bundleId.toLowerCase())) ||
-          entryLower.includes(appNameLower) ||
-          entryLower.includes(appNameLower.replace(/\s/g, '')) ||
-          entryLower.includes(appNameLower.replace(/\s/g, '-'))
-        ) {
+          appVariants.some(v => entryLower.includes(v));
+        if (matches) {
           const fullPath = join(dir, entry);
           const entryStat = await stat(fullPath);
           files.push({
@@ -77,16 +109,22 @@ export async function findAssociatedFiles(bundleId: string, appName: string): Pr
   }
 
   // 扫描隐藏目录 ~/.xxx
+  // Match by: app name variants, bundle ID derived name
   try {
     const homeEntries = await readdir(home);
     for (const entry of homeEntries) {
       if (!entry.startsWith('.')) continue;
-      const entryLower = entry.slice(1).toLowerCase();
-      if (
-        entryLower.includes(appNameLower) ||
-        entryLower.includes(appNameLower.replace(/\s/g, '')) ||
-        entryLower.includes(appNameLower.replace(/\s/g, '-'))
-      ) {
+      const dirName = entry.slice(1); // remove leading dot
+      const dirNameLower = dirName.toLowerCase();
+
+      // Skip protected directories
+      if (PROTECTED_DIRS.has(entry)) continue;
+
+      const matches =
+        appVariants.some(v => dirNameLower.includes(v)) ||
+        (bundleToolName && dirNameLower.includes(bundleToolName));
+
+      if (matches) {
         const fullPath = join(home, entry);
         const entryStat = await stat(fullPath);
         if (entryStat.isDirectory()) {
@@ -95,6 +133,29 @@ export async function findAssociatedFiles(bundleId: string, appName: string): Pr
       }
     }
   } catch { /* 无权限 */ }
+
+  // 扫描 ~/.config/<appname>/ subdirectories
+  const configDir = join(home, '.config');
+  try {
+    if (existsSync(configDir)) {
+      const configEntries = await readdir(configDir);
+      for (const entry of configEntries) {
+        const entryLower = entry.toLowerCase();
+        const matches = appVariants.some(v => entryLower.includes(v)) ||
+          (bundleToolName && entryLower.includes(bundleToolName));
+        if (matches) {
+          const fullPath = join(configDir, entry);
+          const entryStat = await stat(fullPath);
+          if (entryStat.isDirectory()) {
+            // Avoid duplicates if already found above
+            if (!files.some(f => f.path === fullPath)) {
+              files.push({ path: fullPath, type: 'hiddenDir', size: await getDirSize(fullPath) });
+            }
+          }
+        }
+      }
+    }
+  } catch { /* 路径不存在 */ }
 
   return files;
 }
@@ -121,8 +182,15 @@ export async function uninstallApp(
   for (const p of associatedPaths) {
     if (!existsSync(p)) continue;
 
+    // Skip protected directories
+    if ([...PROTECTED_DIRS].some(protectedDir => p.includes(protectedDir))) continue;
+
     if (keepUserData) {
       if (p.includes('Application Support') || p.includes('Documents')) {
+        continue;
+      }
+      // For hidden directories, keep config-like dirs when keeping user data
+      if (p.includes('.config/') || p.includes('.local/')) {
         continue;
       }
     }
@@ -144,6 +212,24 @@ export async function scanResidual(): Promise<AppInfo[]> {
   const appBundleIds = new Set(apps.map((a) => a.bundleId));
   const appNames = new Set(apps.map((a) => a.name.toLowerCase()));
 
+  // Known hidden dir names that belong to installed tools
+  const knownToolDirs = new Set<string>();
+  try {
+    const hiddenDirsPath = join(__dirname, '../data/known-hidden-dirs.json');
+    if (existsSync(hiddenDirsPath)) {
+      const raw = JSON.parse(await readFile(hiddenDirsPath, 'utf-8'));
+      for (const category of Object.values(raw) as Record<string, { path: string; tool?: string }>[] as any[]) {
+        if (Array.isArray(category)) {
+          for (const item of category) {
+            knownToolDirs.add(item.path.replace('.', ''));
+            if (item.tool) knownToolDirs.add(item.tool.toLowerCase());
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // Scan Library directories for orphaned files
   const searchDirs = [
     join(home, 'Library', 'Application Support'),
     join(home, 'Library', 'Preferences'),
@@ -155,7 +241,10 @@ export async function scanResidual(): Promise<AppInfo[]> {
       const entries = await readdir(searchDir);
       for (const entry of entries) {
         const bundlePrefix = entry.split('.').slice(0, 3).join('.');
-        if (bundlePrefix && !appBundleIds.has(bundlePrefix) && !appNames.has(entry.toLowerCase().replace('.plist', ''))) {
+        const isOrphan = bundlePrefix &&
+          ![...appBundleIds].some(id => id.startsWith(bundlePrefix)) &&
+          !appNames.has(entry.toLowerCase().replace('.plist', ''));
+        if (isOrphan) {
           const fullPath = join(searchDir, entry);
           const entryStat = await stat(fullPath);
           residuals.push({
@@ -169,6 +258,48 @@ export async function scanResidual(): Promise<AppInfo[]> {
       }
     } catch { /* 跳过 */ }
   }
+
+  // Scan hidden directories ~/.xxx for orphans
+  // A hidden dir is "orphaned" if its name doesn't match any installed app AND isn't a known tool
+  try {
+    const homeEntries = await readdir(home);
+    for (const entry of homeEntries) {
+      if (!entry.startsWith('.')) continue;
+      const dirName = entry.slice(1).toLowerCase();
+
+      // Skip protected and known tool directories
+      if ([...PROTECTED_DIRS].includes(entry) || knownToolDirs.has(dirName)) continue;
+      // Skip directories modified within last 7 days (likely active)
+      try {
+        const entryStat = await stat(join(home, entry));
+        const daysSinceModified = (Date.now() - entryStat.mtimeMs) / (1000 * 60 * 60 * 24);
+        if (daysSinceModified < 7) continue;
+      } catch { continue; }
+
+      // Check if this dir matches any installed app name
+      const matchesInstalled = [...appNames].some(name =>
+        dirName.includes(name.replace(/\s/g, '')) ||
+        dirName.includes(name.replace(/\s/g, '-'))
+      );
+      if (matchesInstalled) continue;
+
+      // This is a potential orphan
+      const fullPath = join(home, entry);
+      const entryStat = await stat(fullPath);
+      if (entryStat.isDirectory()) {
+        const size = await getDirSize(fullPath);
+        if (size > 1024 * 1024) { // Only show if > 1MB
+          residuals.push({
+            name: `${entry} (未知目录)`,
+            path: fullPath,
+            bundleId: entry,
+            size,
+            associatedFiles: [{ path: fullPath, type: 'hiddenDir', size }],
+          });
+        }
+      }
+    }
+  } catch { /* 无权限 */ }
 
   return residuals;
 }

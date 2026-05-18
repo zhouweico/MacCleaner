@@ -182,17 +182,19 @@
 ### 4.8 Downloads
 
 **扫描内容**：
-- `~/Downloads` 下文件，按大小排序
-- `~/.Trash` 废纸篓内容
+- `~/Downloads` 下文件（含子目录），支持按名称/大小/日期排序
 
 **清理方式**：
-- 勾选文件后移至废纸篓（非永久删除）
-- 空废纸篓按钮
+- 勾选文件或目录后移至废纸篓（非永久删除，通过 `shell.trashItem`）
 
 **UI 展示**：
-- 大文件列表（>10MB 优先展示）
-- 按类型筛选
-- 勾选移至废纸篓 + 清空废纸篓
+- 文件列表支持排序（名称 ↑↓、大小 ↑↓、日期 ↑↓）
+- 全选/反选复选框
+- 选中多项时显示 SelectionSummary 汇总
+- 详情面板展示文件夹子项（CollapsibleFileSection 可折叠）
+- 搜索定位高亮 + 自动滚动
+
+> 注：废纸篓清理使用 macOS 系统原生功能，不在此模块提供清空按钮。
 
 ## 5. 卸载模块
 
@@ -208,12 +210,15 @@
   - `~/Library/Saved Application State/<bundle_id>.savedState/`
   - `~/Library/WebKit/<bundle_id>/`
   - `/usr/local/bin/<name>`（命令行链接）
-  - **隐藏目录关联**：`~/.<appname>/`、`~/.config/<appname>/`（需通过 bundle_id 和 app 名称匹配）
+  - **隐藏目录关联**：`~/.<appname>/`、`~/.config/<appname>/`（通过 bundle_id 和 app 名称匹配）
 
 **隐藏目录处理策略**：
-- 卸载 APP 时，通过 **名称匹配** + **bundle_id 前缀匹配** 扫描 `~/.xxx` 目录
-- 例如卸载 "App Cleaner 8" 时，扫描 `~/.appcleaner`、`~/.app-cleaner` 等
-- 卸载配置类 APP 时（如 VSCode、Cursor），`~/.config/` 下的对应目录也标记
+- 卸载 APP 时，通过 **名称变体匹配** + **bundle_id 推导工具名** 扫描 `~/.xxx` 目录
+- 名称变体生成：去除空格、替换为 `-`/`_`、移除版本号
+- bundle_id 推导：提取最后一段（如 `com.microsoft.VSCode` → `vscode`）
+- `~/.config/` 子目录单独扫描
+- 已知隐藏目录字典（`known-hidden-dirs.json`）用于识别工具目录
+- `~/.ssh/`、`~/.gnupg/` 等安全目录永远排除
 
 **卸载流程**：
 1. 选择要卸载的 APP
@@ -259,9 +264,11 @@
 - 标记已卸载 APP 的残留文件
 
 **隐藏目录扫描策略**：
-- `~/.xxx` 目录按 **最后修改时间** 排序，超过 30 天未访问的优先标记
-- 已知工具目录直接识别（如 `~/.claude`、`~/.codex` 归属已知）
+- `~/.xxx` 目录按 **最后修改时间** 排序，超过 7 天未访问的优先标记
+- 已知工具目录直接排除（`known-hidden-dirs.json` 中的 config/data 类）
+- 保护目录（`.ssh`、`.gnupg`、`.keychain` 等）永远排除
 - 未知目录通过文件名模式匹配已知 APP 名称
+- 仅展示 > 1MB 的未知目录，避免噪音
 
 **UI 展示**：
 - 残留 APP 名称列表 + 残留文件大小（分组：Library 残留 + **隐藏目录残留**）
@@ -288,17 +295,34 @@
 ### 6.3 用户设置
 
 ```
-⚙️ 设置 > AI 分析
-├── 启用 AI 增强分析  [开关]
-├── AI 模型选择
-│   ├── ○ 本地模型 (Ollama) — 离线，免费
-│   └── ○ 云端 API (Claude) — 需 API Key
-├── Ollama 地址  [http://localhost:11434]
-├── Claude API Key  [••••••••••]
-└── 测试连接  [按钮]
+⚙️ 设置 > 定时扫描
+├── 启用每日自动扫描  [开关]
+└── 扫描时间  [09:00]
+
+️ 设置 > AI 增强分析
+── 启用 AI 分析  [开关]
+└── Ollama 地址  [输入框]  [测试连接]
+
+⚙️ 设置 > 快捷键
+├── 全选  A  [开关]
+└── 重新扫描  ⌘R  [开关]
+
+⚙️ 设置 > 操作日志
+── 刷新  [按钮]
+└── 清空  [按钮]
 ```
 
-### 6.4 AI Prompt 设计
+> **实时保存**：所有设置项切换后立即写入 `localStorage`，无需"保存"按钮。定时扫描切换时同步注册/停止定时器。
+
+### 6.4 AI 实现架构
+
+- **规则引擎兜底**：AI 不可用时（Ollama 未启动/连接失败），自动切换到规则引擎分析
+- **已知工具字典**：内置 Claude、Codex、Qwen、Kubernetes、Docker、NVM、Conda、npm 等工具识别
+- **关键词匹配**：cache/config/data/logs 等关键词分类
+- **流式调用**：通过 `curl` 调用 Ollama `/api/generate`，`stream: false` 模式
+- **JSON 解析**：AI 返回 JSON 格式分析结果（software、category、safeToDelete、riskLevel、description、recommendedAction）
+
+### 6.5 AI Prompt 设计
 
 **未知目录分析 Prompt**：
 ```
@@ -328,11 +352,13 @@
 请列出可能遗漏的位置，特别是隐藏目录。
 ```
 
-### 6.5 成本控制
+### 6.6 成本控制
 
-- AI 调用仅在用户**主动触发**时发生（点击「AI 分析未知目录」按钮）
-- 扫描结果缓存，同一目录不重复调用 AI
+- AI 调用仅在用户**主动触发**时发生（点击「AI 分析」按钮）
+- 分析结果不缓存，每次手动触发重新分析
 - 本地 Ollama 无 API 成本，仅需首次下载模型（~4GB）
+- 设置页提供「测试连接」按钮，验证 Ollama 服务可用性
+- AI 不可用时自动回退到规则引擎，零成本兜底
 
 ## 7. 隐藏目录分类表
 
@@ -378,10 +404,24 @@
 - **每日定时扫描**：每天固定时间（可配置）执行一次全量扫描
 - 扫描结果缓存，下次打开 APP 时直接展示
 - 菜单栏显示最新扫描结果的可清理空间
+- **持久化配置**：定时配置保存在 `dist-electron/data/schedule.json`，重启后自动恢复
+- **防重复触发**：同一分钟内只执行一次，执行后自动重新启用次日扫描
+- **支持停止**：关闭定时开关后清除定时器并更新配置
 
 ## 9. 安全策略
 
-### 混合清理模式
+### 9.1 操作日志
+
+- 所有清理、卸载操作自动记录日志
+- **UI 展示**（设置页）：
+  - 第一行：左侧文件/目录路径 · 右侧 成功/失败
+  - 第二行：左侧图标+类型 · 右侧日期时间
+  - 额外信息：释放空间、详情、错误信息在下方独立展示
+- 最多保留 200 条记录，超出自动清理旧条目
+- 持久化到 `dist-electron/data/operation-log.json`
+- 设置页可查看、刷新、清空日志
+
+### 9.2 混合清理模式
 
 | 级别 | 按钮颜色 | 行为 | 示例 |
 |------|----------|------|------|
@@ -469,14 +509,110 @@ cleaner/
 | `uninstall:cli` | renderer → main | 卸载 CLI 工具 |
 | `scan:residual` | renderer → main | 扫描 APP 残留（含隐藏目录） |
 | `schedule:register` | renderer → main | 注册定时任务 |
+| `schedule:stop` | renderer → main | 停止定时任务 |
+| `logs:get` | renderer → main | 获取操作日志 |
+| `logs:clear` | renderer → main | 清空操作日志 |
 | `events:progress` | main → renderer | 清理/扫描进度更新 |
 | `events:complete` | main → renderer | 操作完成通知 |
 | `events:error` | main → renderer | 错误通知 |
 
-## 12. 权限与 macOS 适配
+## 13. 已实现的增强功能（超出原始设计）
 
-- 需要 **Full Disk Access** 权限（引导用户在系统设置中开启）
-- 菜单栏图标使用 `tray` API
-- 首次启动引导页介绍权限需求
-- 使用 `child_process.execFile` 执行系统命令，避免 shell 注入
-- 隐藏目录扫描需要正确处理 macOS 的 hidden attribute
+### 13.1 三栏布局
+
+原始设计为左侧导航 + 右侧内容两栏布局。实际实现采用 **三栏布局**：
+- 左侧：分类导航 Sidebar
+- 中部：模块列表视图（ListDetailLayout）
+- 右侧：详情面板（可选展开）
+
+### 13.2 全局键盘快捷键
+
+实现 `useKeyboardShortcuts` hook，支持：
+- `Cmd+R` — 重新扫描（受设置开关控制）
+- `Cmd+1~9` — 快速切换导航项
+- `Cmd+W` — 隐藏窗口（非关闭）
+- `Escape` — 返回仪表盘
+
+### 13.3 Finder 图标集成
+
+实现 `FinderIcon` 组件，从 `.app` bundle 中提取并渲染原生 macOS 应用图标，用于：
+- APP 卸载列表显示真实图标
+- 已安装 APP 卡片展示
+
+### 13.4 面板双向通信
+
+Tray 弹出面板与主窗口之间实现完整双向数据同步：
+- 面板清理后 → 通过 `panel:refresh` IPC → 主窗口 `events:refresh` 事件 → 主窗口重新扫描
+- 主窗口导航 → 通过 `navigate:module` IPC → 面板切换模块
+- 面板刷新按钮 → `onMouseDown + preventDefault` 阻止 blur 隐藏
+
+### 13.5 自动隐藏滚动条
+
+实现 `AutoHideScroll` 组件，在列表容器中提供 macOS 风格的自动隐藏滚动条，提升面板和列表的视觉简洁度。
+
+### 13.6 可折叠文件列表
+
+实现 `CollapsibleFileSection` 组件，支持展开/收起大文件列表，避免单次展示过多内容。
+
+### 13.7 选择摘要
+
+实现 `SelectionSummary` 组件，在多选列表中显示已选项目的数量、总大小，提升批量操作的可视化反馈。
+
+### 13.8 错误边界
+
+实现 `ErrorBoundary` 组件，捕获渲染树中的错误，防止单个模块错误导致整个应用崩溃。
+
+### 13.9 布局包装器
+
+实现 `LayoutWrapper` 组件，统一管理模块视图的布局、加载状态和空状态展示。
+
+### 13.10 图标资源管理
+
+- 新增 `extractAppIcon.ts` 工具函数，从 `.app` bundle 中提取图标
+- Tray 图标使用 `resources/extension_icon.png`，自适应深色/浅色菜单栏
+- 打包配置包含 `resources/` 目录
+
+### 13.11 窗口行为优化
+
+- 主窗口关闭时隐藏到 Tray（非退出），`willQuit` 标记控制真正退出
+- 单实例锁（`requestSingleInstanceLock`），防止多开
+- 开发模式自动打开 DevTools，生产模式关闭
+- 拦截 Cmd+R，根据设置决定是否允许刷新
+- Panel 窗口失焦自动隐藏（`blur` 事件）
+
+### 13.12 菜单栏弹窗快捷键
+
+弹窗底部 4 个按钮支持 ⌘ 组合快捷键：
+
+| 快捷键 | 按钮 | 功能 |
+|--------|------|------|
+| `⌘R` | 刷新 | 重新扫描数据 |
+| `⌘O` | 打开 | 打开主窗口 |
+| `⌘,` | 设置 | 打开主窗口并跳到设置页 |
+| `⌘Q` | 退出 | 退出应用 |
+
+### 13.13 关于面板
+
+单入口：macOS 顶部菜单栏 **"MacCleaner"** → **"关于 MacCleaner"**（通过自定义 Application Menu 拦截）。
+Tray 图标已移除右键菜单。
+
+**窗口**：独立 `BrowserWindow`，`titleBarStyle: 'hidden'`（保留红绿灯按钮），`-webkit-app-region: drag` 支持拖拽。
+
+**图标方案**：`nativeImage.createFromPath()` 对 `.icns` 支持不完整，先用 `sips -s format png` 转为 PNG 再读取 `toDataURL()`。
+
+**弹窗内容**：
+- 应用图标（84×84，圆角）
+- 应用名称（大字加粗）
+- 版本号（独立行）
+- 组件版本列表（独立行排列）：
+  - Electron
+  - Node.js
+  - Chromium
+  - V8
+- 版权信息（底部）
+
+**交互**：
+- macOS 原生红绿灯关闭按钮
+- 窗口可拖拽
+- 不可拖拽（关闭按钮可拖拽区域外）
+- 深色主题，与应用设计语言一致

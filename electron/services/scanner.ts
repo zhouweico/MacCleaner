@@ -280,6 +280,7 @@ async function scanDownloads() {
   const items: ScanItem[] = [];
   let totalSize = 0;
 
+  // 扫描 Downloads 目录
   const downloadsPath = join(home, 'Downloads');
   try {
     const files = await readdir(downloadsPath);
@@ -325,6 +326,23 @@ async function scanDownloads() {
     }
   } catch {
     /* 路径不存在 */
+  }
+
+  // 扫描废纸篓内容
+  const trashPath = join(home, '.Trash');
+  const trashSize = await getDirSize(trashPath);
+  if (trashSize > 0) {
+    const trashChildren = await scanDirChildren(trashPath);
+    items.push({
+      name: '.Trash (废纸篓)',
+      path: trashPath,
+      size: trashSize,
+      type: 'cache',
+      safeToRemove: true,
+      description: '可清空废纸篓释放空间',
+      children: trashChildren,
+    });
+    totalSize += trashSize;
   }
 
   return { items, totalSize };
