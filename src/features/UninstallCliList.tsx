@@ -6,6 +6,7 @@ import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
 import AiDrawer from '@/components/AiDrawer';
+import { isAiEnabled } from '@/lib/aiSettings';
 
 type CliTool = AppState['cliTools'][number];
 
@@ -191,7 +192,7 @@ export function UninstallCliDetail() {
           <div className="flex justify-between"><span className="text-macos-text-secondary">来源</span><span>{tool.source}</span></div>
         </div>
       </AutoHideScroll>
-      {aiOpen && (
+      {isAiEnabled() && aiOpen && (
         <>
           <button
             onClick={() => setAiOpen(false)}
@@ -210,11 +211,13 @@ export function UninstallCliDetail() {
           <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setAiOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 transition-colors" title="AI 分析">
-            <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-          </button>
+          {isAiEnabled() && (
+            <button onClick={() => setAiOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 transition-colors" title="AI 分析">
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </button>
+          )}
           <button
             onClick={handleUninstall}
             disabled={uninstalling}
