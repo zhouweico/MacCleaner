@@ -69,7 +69,7 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
   }, [dirPath, config]);
 
   return (
-    <div className="absolute top-0 right-0 bottom-[60px] z-20 flex w-96 max-w-[40%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
+    <div className="absolute top-0 right-0 bottom-[60px] z-20 flex w-96 max-w-[50%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
          style={{ backdropFilter: 'blur(20px)' }}>
       {/* Header — 两行结构，与详情页标题栏高度一致 */}
       <div className="shrink-0 border-b border-macos-separator px-4 py-3">
