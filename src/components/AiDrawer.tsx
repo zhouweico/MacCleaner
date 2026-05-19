@@ -8,7 +8,6 @@ interface AiDrawerProps {
   dirPath: string;
   dirName?: string;
   dirSize?: number;
-  onClose: () => void;
 }
 
 const STORAGE_KEY = 'maccleaner-settings';
@@ -49,7 +48,7 @@ const riskLabels: Record<string, string> = {
   high: '高风险',
 };
 
-export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawerProps) {
+export default function AiDrawer({ dirPath, dirName, dirSize }: AiDrawerProps) {
   const [result, setResult] = useState<AiAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,28 +71,15 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
     <div className="absolute top-0 right-0 bottom-[60px] z-30 flex w-96 max-w-[50%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
          style={{ backdropFilter: 'blur(20px)' }}>
       {/* Header — 两行结构，与详情页标题栏高度一致 */}
-      <div className="shrink-0 border-b border-macos-separator px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-base shrink-0">
-              {'🤖'}
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold">AI 分析</h3>
-              {dirName && (
-                <p className="text-xs text-macos-text-tertiary truncate">{dirName}</p>
-              )}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => onClose()}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-macos-text-tertiary hover:bg-macos-surface-hover transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div className="flex shrink-0 items-center gap-3 border-b border-macos-separator px-4 py-3">
+        <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-base shrink-0">
+          {'🤖'}
+        </div>
+        <div>
+          <h3 className="text-sm font-bold">AI 分析</h3>
+          {dirName && (
+            <p className="text-xs text-macos-text-tertiary truncate">{dirName}</p>
+          )}
         </div>
       </div>
 
