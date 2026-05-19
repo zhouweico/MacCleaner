@@ -31,7 +31,7 @@ function loadProviderConfig(): { enabled: boolean } & AiProviderConfig {
 
 const categoryIcons: Record<string, string> = {
   cache: '🗂️',
-  config: '⚙️',
+  config: '️',
   data: '📁',
   log: '📋',
   unknown: '❓',
@@ -69,29 +69,32 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
   }, [dirPath, config]);
 
   return (
-    <div className="absolute top-0 right-0 bottom-[60px] z-20 flex w-96 max-w-[50%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
-         style={{ backdropFilter: 'blur(20px)' }}>
+    <div className="absolute inset-y-0 right-0 z-30 flex w-96 max-w-[50%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
+         style={{ backdropFilter: 'blur(20px)', pointerEvents: 'auto' }}>
+      {/* 关闭按钮 — 绝对定位在右上角 */}
+      <button
+        type="button"
+        onClick={() => onClose()}
+        className="absolute right-3 top-3 z-50 flex h-8 w-8 items-center justify-center rounded-lg text-macos-text-tertiary hover:bg-macos-surface-hover hover:text-macos-text-primary transition-colors"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ pointerEvents: 'none' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
       {/* Header — 两行结构，与详情页标题栏高度一致 */}
       <div className="shrink-0 border-b border-macos-separator px-4 py-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-base shrink-0"></div>
-            <div>
-              <h3 className="text-sm font-bold">AI 分析</h3>
-              {dirName && (
-                <p className="text-xs text-macos-text-tertiary truncate max-w-[180px]">{dirName}</p>
-              )}
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-base shrink-0">
+            {'🤖'}
           </div>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onClose(); }}
-            className="flex h-6 w-6 items-center justify-center rounded hover:bg-macos-surface-hover transition-colors"
-          >
-            <svg className="w-3.5 h-3.5 text-macos-text-tertiary" viewBox="0 0 12 12" fill="none">
-              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
+          <div>
+            <h3 className="text-sm font-bold">AI 分析</h3>
+            {dirName && (
+              <p className="text-xs text-macos-text-tertiary truncate">{dirName}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -150,7 +153,7 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
               {/* Identity card */}
               <div className="rounded-xl border border-macos-separator bg-macos-surface/60 p-4">
                 <div className="flex items-center gap-2.5 mb-2.5">
-                  <span className="text-lg">{categoryIcons[result.category] ?? ''}</span>
+                  <span className="text-lg">{categoryIcons[result.category] ?? '❓'}</span>
                   <span className="text-sm font-semibold text-macos-text-primary">{result.software}</span>
                 </div>
                 <p className="text-xs leading-relaxed text-macos-text-secondary">{result.description}</p>
@@ -190,7 +193,11 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
 
           {!result && !loading && !error && (
             <div className="flex flex-col items-center justify-center py-12 text-macos-text-tertiary">
-              <span className="text-4xl mb-3 opacity-40">🤖</span>
+              <span className="text-4xl mb-3 opacity-40">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </span>
               <p className="text-xs text-center leading-relaxed">
                 使用 {config.type === 'ollama' ? 'Ollama' : config.type === 'anthropic' ? 'Claude' : 'AI'} 模型<br />
                 分析目录用途与清理风险
