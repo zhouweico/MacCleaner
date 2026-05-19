@@ -30,7 +30,7 @@ function loadProviderConfig(): { enabled: boolean } & AiProviderConfig {
 
 const categoryIcons: Record<string, string> = {
   cache: '🗂️',
-  config: '⚙️',
+  config: '️',
   data: '📁',
   log: '📋',
   unknown: '❓',
@@ -68,13 +68,13 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
   }, [dirPath, config]);
 
   return (
-    <div className="absolute inset-y-0 right-0 z-20 flex w-96 max-w-[40%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
+    <div className="absolute top-0 right-0 bottom-[44px] z-20 flex w-96 max-w-[40%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
          style={{ backdropFilter: 'blur(20px)' }}>
       {/* Header — 两行结构，与详情页标题栏高度一致 */}
-      <div className="border-b border-macos-separator px-4 py-3">
+      <div className="relative shrink-0 border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-base shrink-0">🤖</div>
+            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-base shrink-0"></div>
             <div>
               <h3 className="text-sm font-bold">AI 分析</h3>
               {dirName && (
@@ -83,10 +83,12 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-macos-text-tertiary hover:bg-macos-surface-hover hover:text-macos-text-primary transition-colors"
+            className="relative z-10 rounded-md p-1 text-macos-text-tertiary hover:bg-macos-surface-hover hover:text-macos-text-primary transition-colors"
+            style={{ pointerEvents: 'auto' }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ pointerEvents: 'none' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -149,11 +151,29 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
               <div className="flex items-center gap-2.5 mb-2.5">
                 <span className="text-lg">{categoryIcons[result.category] ?? '❓'}</span>
                 <span className="text-sm font-semibold text-macos-text-primary">{result.software}</span>
-                <span className={`text-[10px] font-semibold rounded-md px-2 py-0.5 ${riskColors[result.riskLevel]}`}>
-                  {riskLabels[result.riskLevel]}
-                </span>
               </div>
               <p className="text-xs leading-relaxed text-macos-text-secondary">{result.description}</p>
+            </div>
+
+            {/* Risk level card */}
+            <div className="rounded-xl border border-macos-separator bg-macos-surface/60 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-base">️</span>
+                <span className="text-xs font-semibold text-macos-text-primary">风险评估</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-bold ${riskColors[result.riskLevel]}`}>
+                  {riskLabels[result.riskLevel]}
+                </span>
+                {result.safeToDelete && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-macos-green">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    可安全清理
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Recommendation */}
@@ -163,14 +183,6 @@ export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawe
                 <span className="text-xs font-semibold text-macos-text-primary">推荐操作</span>
               </div>
               <p className="text-xs leading-relaxed text-macos-text-secondary">{result.recommendedAction}</p>
-              {result.safeToDelete && (
-                <div className="mt-3 flex items-center gap-2 rounded-lg bg-macos-green/10 px-3 py-2">
-                  <svg className="w-3.5 h-3.5 text-macos-green shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-xs font-medium text-macos-green">可安全清理</span>
-                </div>
-              )}
             </div>
           </div>
         )}
