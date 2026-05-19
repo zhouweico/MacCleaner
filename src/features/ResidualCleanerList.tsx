@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanResidual, advancedClean } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -6,7 +6,8 @@ import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, CleanAction } from '@/types';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
-import AiAnalyzer from '@/features/AiAnalyzer';
+import AiDrawer from '@/components/AiDrawer';
+import AiFloatButton from '@/components/AiFloatButton';
 
 function ResidualCleanerList() {
   const { residuals, setResiduals, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
@@ -144,8 +145,10 @@ export function ResidualCleanerDetail() {
   const residual = residuals.find(r => r.path === selectedItem?.path) as AppInfo | undefined;
   if (!residual) return <p className="text-macos-text-tertiary">选择一项以查看详情</p>;
 
+  const [aiOpen, setAiOpen] = useState(false);
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -170,8 +173,9 @@ export function ResidualCleanerDetail() {
             </div>
           ))}
         </div>
-        {residual.path && <AiAnalyzer dirPath={residual.path} dirName={residual.name} dirSize={residual.size} />}
       </AutoHideScroll>
+      <AiFloatButton onClick={() => setAiOpen(true)} />
+      {aiOpen && residual.path && <AiDrawer dirPath={residual.path} dirName={residual.name} dirSize={residual.size} onClose={() => setAiOpen(false)} />}
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>

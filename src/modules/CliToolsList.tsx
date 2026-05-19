@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -7,7 +7,8 @@ import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
-import AiAnalyzer from '@/features/AiAnalyzer';
+import AiDrawer from '@/components/AiDrawer';
+import AiFloatButton from '@/components/AiFloatButton';
 
 async function moveToTrash(paths: string[]) {
   for (const p of paths) {
@@ -154,9 +155,10 @@ export function CliToolsDetail() {
 
   const item = selectedItem as unknown as ScanItem;
   const selectedCount = selectedPaths.size;
+  const [aiOpen, setAiOpen] = useState(false);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -182,8 +184,9 @@ export function CliToolsDetail() {
             <div className="flex justify-between"><span className="text-macos-text-secondary">安全清理</span><span className={item.safeToRemove ? 'text-green-400' : 'text-orange-400'}>{item.safeToRemove ? '是' : '否'}</span></div>
           </div>
         )}
-        <AiAnalyzer dirPath={item.path} dirName={item.name} dirSize={item.size} />
       </AutoHideScroll>
+      <AiFloatButton onClick={() => setAiOpen(true)} />
+      {aiOpen && <AiDrawer dirPath={item.path} dirName={item.name} dirSize={item.size} onClose={() => setAiOpen(false)} />}
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
