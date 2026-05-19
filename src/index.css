@@ -112,3 +112,12 @@ button:focus-visible {
 .window-drag-region [class*="cursor-"] {
   -webkit-app-region: no-drag;
 }
+
+/* Toast 滑入动画 */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}

@@ -119,3 +119,19 @@ export function showAbout() {
 export async function getAppInfo(): Promise<{ name: string; version: string; description: string; electron: string; node: string }> {
   return window.electronAPI.ipc.invoke('app:info') as Promise<{ name: string; version: string; description: string; electron: string; node: string }>;
 }
+
+export async function checkForUpdates(): Promise<{ success: boolean; error?: string }> {
+  return window.electronAPI.ipc.invoke('update:check') as Promise<{ success: boolean; error?: string }>;
+}
+
+export async function downloadUpdate(): Promise<{ success: boolean }> {
+  return window.electronAPI.ipc.invoke('update:download') as Promise<{ success: boolean }>;
+}
+
+export function onUpdateProgress(callback: (data: { percent: number }) => void): () => void {
+  return window.electronAPI.ipc.on('update:progress', (data) => callback(data as { percent: number }));
+}
+
+export function openExternal(url: string) {
+  window.electronAPI.ipc.invoke('shell:open-external', url);
+}

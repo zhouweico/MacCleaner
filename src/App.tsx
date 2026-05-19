@@ -1,9 +1,10 @@
 import Sidebar from '@/components/Sidebar';
 import LayoutWrapper from '@/components/LayoutWrapper';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ToastProvider, toast } from '@/components/Toast';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAppStore } from '@/store';
-import { scanAll, scanApps, scanResidual, scanCliToolsList } from '@/lib/ipc';
+import { scanAll, scanApps, scanResidual, scanCliToolsList, checkForUpdates } from '@/lib/ipc';
 import { useEffect } from 'react';
 
 function App() {
@@ -14,7 +15,14 @@ function App() {
     (window as any).__navigateToModule = (moduleId: string) => {
       setCurrentModule(moduleId);
     };
-    return () => { delete (window as any).__navigateToModule; };
+    (window as any).__checkUpdate = async () => {
+      setCurrentModule('settings');
+      setTimeout(() => checkForUpdates(), 100);
+    };
+    return () => {
+      delete (window as any).__navigateToModule;
+      delete (window as any).__checkUpdate;
+    };
   }, [setCurrentModule]);
 
   useKeyboardShortcuts();
@@ -45,21 +53,32 @@ function App() {
       }
     });
 
+    // Listen for toast notifications from main process
+    const unsubToast = window.electronAPI.ipc.on('toast:show', (data: unknown) => {
+      const { message, type } = data as { message: string; type: 'success' | 'error' | 'info' };
+      if (type === 'success') toast.success(message);
+      else if (type === 'error') toast.error(message);
+      else toast.info(message);
+    });
+
     return () => {
       unsubNav();
       unsubRefresh();
+      unsubToast();
     };
   }, []);
 
   return (
-    <div className="flex h-screen w-screen bg-macos-bg text-macos-text-primary">
-      {/* 顶部拖动条 */}
-      <div className="window-drag-region fixed top-0 left-0 right-0 h-10 z-50" />
-      <Sidebar />
-      <ErrorBoundary>
-        <LayoutWrapper />
-      </ErrorBoundary>
-    </div>
+    <ToastProvider>
+      <div className="flex h-screen w-screen bg-macos-bg text-macos-text-primary">
+        {/* 顶部拖动条 */}
+        <div className="window-drag-region fixed top-0 left-0 right-0 h-10 z-50" />
+        <Sidebar />
+        <ErrorBoundary>
+          <LayoutWrapper />
+        </ErrorBoundary>
+      </div>
+    </ToastProvider>
   );
 }
 

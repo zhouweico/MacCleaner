@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, dialog, shell } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { registerScanHandlers } from './ipc/scan';
@@ -10,6 +10,11 @@ import { registerAiHandlers } from './ipc/ai';
 import { readFileSync, unlinkSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { tmpdir } from 'os';
+import { autoUpdater } from 'electron-updater';
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.allowPrerelease = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
@@ -210,6 +215,7 @@ function createAppMenu() {
       label: app.name,
       submenu: [
         { label: `关于 ${app.name}`, click: showAboutPanel },
+        { label: '检查更新', click: () => mainWindow?.webContents.executeJavaScript('window.__checkUpdate?.()') },
         { type: 'separator' },
         {
           label: '设置',
@@ -239,6 +245,11 @@ function createAppMenu() {
 }
 
 app.whenReady().then(() => {
+  autoUpdater.requestHeaders = {
+    'User-Agent': `MacCleaner/${packageJson.version} (Electron/${process.versions.electron})`,
+    'Accept': 'application/vnd.github.v3+json',
+  };
+
   createAppMenu();
   createTray();
   createWindow();
@@ -282,6 +293,75 @@ app.whenReady().then(() => {
     electron: process.versions.electron,
     node: process.versions.node,
   }));
+
+  // Auto-update handlers
+  ipcMain.handle('update:check', async () => {
+    try {
+      await autoUpdater.checkForUpdates();
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : '检查更新失败' };
+    }
+  });
+
+  ipcMain.handle('update:download', async () => {
+    autoUpdater.downloadUpdate();
+    return { success: true };
+  });
+
+  ipcMain.handle('update:install', () => {
+    autoUpdater.quitAndInstall();
+  });
+
+  ipcMain.handle('shell:open-external', (_e, url: string) => {
+    shell.openExternal(url);
+  });
+});
+
+// Auto-update events
+autoUpdater.on('update-available', (info) => {
+  dialog.showMessageBox(mainWindow!, {
+    type: 'info',
+    title: '发现新版本',
+    message: `MacCleaner ${info.version} 已发布`,
+    detail: '是否立即下载并安装？',
+    buttons: ['下载', '取消'],
+    cancelId: 1,
+  }).then(({ response }) => {
+    if (response === 0) {
+      autoUpdater.downloadUpdate();
+    }
+  });
+});
+
+autoUpdater.on('update-not-available', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send('toast:show', { message: '当前已是最新版本', type: 'success' });
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  mainWindow?.webContents.send('update:progress', {
+    percent: Math.round(progress.percent),
+  });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  dialog.showMessageBox(mainWindow!, {
+    type: 'info',
+    title: '下载完成',
+    message: `新版本 ${info.version} 已下载完成`,
+    detail: '是否立即安装并重启？',
+    buttons: ['安装并重启', '稍后'],
+    cancelId: 1,
+  }).then(({ response }) => {
+    if (response === 0) {
+      autoUpdater.quitAndInstall();
+    }
+  });
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('Auto update error:', err);
 });
 
 app.on('before-quit', () => {

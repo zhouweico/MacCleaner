@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { registerSchedule, getOperationLogs, clearOperationLogs, getAppInfo } from '@/lib/ipc';
+import { registerSchedule, getOperationLogs, clearOperationLogs, checkForUpdates, getAppInfo, openExternal } from '@/lib/ipc';
 import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import AutoHideScroll from '@/components/AutoHideScroll';
 import type { OperationLogEntry } from '@/lib/ipc';
@@ -74,7 +74,8 @@ function SettingsView() {
   });
   const [logs, setLogs] = useState<OperationLogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [appInfo, setAppInfo] = useState<{ version: string; electron: string; node: string } | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
+  const [appVersion, setAppVersion] = useState<string>('');
 
   useEffect(() => {
     const s = loadSettings();
@@ -84,7 +85,7 @@ function SettingsView() {
     setOllamaUrl(s.ollamaUrl);
     setShortcutEnabled(s.shortcutEnabled ?? { selectAll: true, rescan: true });
     loadLogs();
-    getAppInfo().then(info => setAppInfo(info));
+    getAppInfo().then(info => setAppVersion(info.version));
   }, []);
 
   function handleScheduleChange(enabled: boolean) {
@@ -276,6 +277,51 @@ function SettingsView() {
         </div>
       </div>
 
+      {/* About card */}
+      <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-macos-separator">
+          <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">关于</h2>
+        </div>
+        <div className="px-4">
+          {/* Current version + check update */}
+          <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
+            <div className="text-sm font-medium">
+              {appVersion ? `版本号 ${appVersion}` : '检查更新'}
+            </div>
+            <button
+              onClick={async () => {
+                setUpdateChecking(true);
+                try {
+                  const res = await checkForUpdates();
+                  if (!res.success) {
+                    alert(`检查失败: ${res.error}`);
+                  }
+                } finally {
+                  setUpdateChecking(false);
+                }
+              }}
+              disabled={updateChecking}
+              className="shrink-0 rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface disabled:opacity-40 transition-colors"
+            >
+              {updateChecking ? '检查中...' : '检查并更新'}
+            </button>
+          </div>
+          {/* Update log */}
+          <div className="flex items-center justify-between py-2.5">
+            <div>
+              <div className="text-sm font-medium">更新日志</div>
+              <div className="text-xs text-macos-text-tertiary">查看每个版本的新功能</div>
+            </div>
+            <button
+              onClick={() => openExternal('https://github.com/zhouweico/MacCleaner/releases')}
+              className="shrink-0 rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface transition-colors"
+            >
+              查看
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Operation Log card */}
       <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-macos-separator flex items-center justify-between">
@@ -341,12 +387,6 @@ function SettingsView() {
             })
           )}
         </div>
-      </div>
-
-      {/* Version info */}
-      <div className="mt-3 text-center">
-        <p className="text-xs text-macos-text-tertiary">MacCleaner v{appInfo?.version ?? '...'}</p>
-        <p className="text-[10px] text-macos-text-tertiary mt-0.5">Electron {appInfo?.electron} · Node {appInfo?.node}</p>
       </div>
       </div>
     </AutoHideScroll>
