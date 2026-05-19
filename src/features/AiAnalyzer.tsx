@@ -1,13 +1,32 @@
 import { useState, useCallback } from 'react';
 import { aiAnalyze } from '@/lib/ipc';
-import type { AiAnalysisResult } from '@/lib/ipc';
+import type { AiAnalysisResult, AiProviderConfig } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 
 interface AiAnalyzerProps {
   dirPath: string;
   dirName?: string;
   dirSize?: number;
-  ollamaUrl?: string;
+}
+
+const STORAGE_KEY = 'maccleaner-settings';
+
+function loadProviderConfig(): AiProviderConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { type: 'ollama' };
+    const s = JSON.parse(raw);
+    switch (s.aiProvider) {
+      case 'openai':
+        return { type: 'openai', url: s.openaiUrl, model: s.openaiModel, apiKey: s.openaiApiKey };
+      case 'anthropic':
+        return { type: 'anthropic', model: s.anthropicModel, apiKey: s.anthropicApiKey };
+      default:
+        return { type: 'ollama', url: s.ollamaUrl || 'http://localhost:11434', model: s.ollamaModel || 'llama3.2' };
+    }
+  } catch {
+    return { type: 'ollama' };
+  }
 }
 
 const categoryIcons: Record<string, string> = {
@@ -30,7 +49,7 @@ const riskLabels: Record<string, string> = {
   high: '高风险',
 };
 
-function AiAnalyzer({ dirPath, dirName, dirSize, ollamaUrl }: AiAnalyzerProps) {
+function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
   const [result, setResult] = useState<AiAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +58,15 @@ function AiAnalyzer({ dirPath, dirName, dirSize, ollamaUrl }: AiAnalyzerProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await aiAnalyze(dirPath, ollamaUrl);
+      const config = loadProviderConfig();
+      const res = await aiAnalyze(dirPath, config);
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : '分析失败');
     } finally {
       setLoading(false);
     }
-  }, [dirPath, ollamaUrl]);
+  }, [dirPath]);
 
   return (
     <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
@@ -92,7 +112,7 @@ function AiAnalyzer({ dirPath, dirName, dirSize, ollamaUrl }: AiAnalyzerProps) {
 
       {!result && !loading && !error && (
         <p className="text-xs text-macos-text-tertiary">
-          使用 Ollama 本地模型分析未知目录用途
+          使用 AI 模型分析未知目录用途
         </p>
       )}
     </div>

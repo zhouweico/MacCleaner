@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { registerSchedule, getOperationLogs, clearOperationLogs, checkForUpdates, getAppInfo, openExternal } from '@/lib/ipc';
+import { registerSchedule, getOperationLogs, clearOperationLogs, checkForUpdates, getAppInfo, openExternal, testAiConnection } from '@/lib/ipc';
 import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import AutoHideScroll from '@/components/AutoHideScroll';
-import type { OperationLogEntry } from '@/lib/ipc';
+import type { OperationLogEntry, AiProviderConfig } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
 
 const STORAGE_KEY = 'maccleaner-settings';
@@ -11,7 +11,14 @@ interface SavedSettings {
   scanTime: string;
   scheduleEnabled: boolean;
   aiEnabled: boolean;
+  aiProvider: 'ollama' | 'openai' | 'anthropic';
   ollamaUrl: string;
+  ollamaModel: string;
+  openaiUrl: string;
+  openaiModel: string;
+  openaiApiKey: string;
+  anthropicApiKey: string;
+  anthropicModel: string;
   shortcutEnabled?: Record<string, boolean>;
 }
 
@@ -20,7 +27,14 @@ function loadSettings(): SavedSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { scanTime: '09:00', scheduleEnabled: false, aiEnabled: false, ollamaUrl: 'http://localhost:11434', shortcutEnabled: {} };
+  return {
+    scanTime: '09:00', scheduleEnabled: false, aiEnabled: false,
+    aiProvider: 'ollama',
+    ollamaUrl: 'http://localhost:11434', ollamaModel: 'llama3.2',
+    openaiUrl: 'https://api.openai.com/v1', openaiModel: 'gpt-4o-mini', openaiApiKey: '',
+    anthropicApiKey: '', anthropicModel: 'claude-sonnet-4-6',
+    shortcutEnabled: {},
+  };
 }
 
 function saveSettings(settings: SavedSettings) {
@@ -66,8 +80,17 @@ function SettingsView() {
   const [scanTime, setScanTime] = useState(() => loadSettings().scanTime);
   const [scheduleEnabled, setScheduleEnabled] = useState(() => loadSettings().scheduleEnabled);
   const [aiEnabled, setAiEnabled] = useState(() => loadSettings().aiEnabled);
+  const [aiProvider, setAiProvider] = useState<'ollama' | 'openai' | 'anthropic'>(() => loadSettings().aiProvider);
   const [ollamaUrl, setOllamaUrl] = useState(() => loadSettings().ollamaUrl);
+  const [ollamaModel, setOllamaModel] = useState(() => loadSettings().ollamaModel);
+  const [openaiUrl, setOpenaiUrl] = useState(() => loadSettings().openaiUrl);
+  const [openaiModel, setOpenaiModel] = useState(() => loadSettings().openaiModel);
+  const [openaiApiKey, setOpenaiApiKey] = useState(() => loadSettings().openaiApiKey);
+  const [anthropicApiKey, setAnthropicApiKey] = useState(() => loadSettings().anthropicApiKey);
+  const [anthropicModel, setAnthropicModel] = useState(() => loadSettings().anthropicModel);
   const [ollamaTestStatus, setOllamaTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [cloudTestStatus, setCloudTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [showApiKey, setShowApiKey] = useState(false);
   const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
     const s = loadSettings();
     return s.shortcutEnabled ?? { selectAll: true, rescan: true };
@@ -82,7 +105,14 @@ function SettingsView() {
     setScanTime(s.scanTime);
     setScheduleEnabled(s.scheduleEnabled);
     setAiEnabled(s.aiEnabled);
+    setAiProvider(s.aiProvider);
     setOllamaUrl(s.ollamaUrl);
+    setOllamaModel(s.ollamaModel);
+    setOpenaiUrl(s.openaiUrl);
+    setOpenaiModel(s.openaiModel);
+    setOpenaiApiKey(s.openaiApiKey);
+    setAnthropicApiKey(s.anthropicApiKey);
+    setAnthropicModel(s.anthropicModel);
     setShortcutEnabled(s.shortcutEnabled ?? { selectAll: true, rescan: true });
     loadLogs();
     getAppInfo().then(info => setAppVersion(info.version));
@@ -118,11 +148,40 @@ function SettingsView() {
     window.dispatchEvent(new Event('settings-changed'));
   }
 
-  function handleOllamaUrlChange(url: string) {
-    setOllamaUrl(url);
+  function handleAiProviderChange(provider: 'ollama' | 'openai' | 'anthropic') {
+    setAiProvider(provider);
     const current = loadSettings();
-    saveSettings({ ...current, ollamaUrl: url });
+    saveSettings({ ...current, aiProvider: provider });
     window.dispatchEvent(new Event('settings-changed'));
+  }
+
+  function saveAiField(field: string, value: unknown) {
+    const current = loadSettings();
+    saveSettings({ ...current, [field]: value });
+    window.dispatchEvent(new Event('settings-changed'));
+  }
+
+  async function testConnection() {
+    const config = getProviderConfig();
+    setCloudTestStatus('testing');
+    try {
+      const res = await testAiConnection(config);
+      setCloudTestStatus(res.success ? 'ok' : 'fail');
+    } catch {
+      setCloudTestStatus('fail');
+    }
+    setTimeout(() => setCloudTestStatus('idle'), 3000);
+  }
+
+  function getProviderConfig(): AiProviderConfig {
+    switch (aiProvider) {
+      case 'ollama':
+        return { type: 'ollama', url: ollamaUrl, model: ollamaModel };
+      case 'openai':
+        return { type: 'openai', url: openaiUrl, model: openaiModel, apiKey: openaiApiKey };
+      case 'anthropic':
+        return { type: 'anthropic', model: anthropicModel, apiKey: anthropicApiKey };
+    }
   }
 
   function toggleShortcut(key: string) {
@@ -153,12 +212,8 @@ function SettingsView() {
   async function testOllamaConnection() {
     setOllamaTestStatus('testing');
     try {
-      const resp = await fetch(ollamaUrl, { method: 'GET' });
-      if (resp.ok || resp.status === 404) {
-        setOllamaTestStatus('ok');
-      } else {
-        setOllamaTestStatus('fail');
-      }
+      const res = await testAiConnection({ type: 'ollama', url: ollamaUrl, model: ollamaModel });
+      setOllamaTestStatus(res.success ? 'ok' : 'fail');
     } catch {
       setOllamaTestStatus('fail');
     }
@@ -209,41 +264,192 @@ function SettingsView() {
           <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">AI 增强分析</h2>
         </div>
         <div className="px-4">
+          {/* Enable toggle */}
           <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
             <div>
               <div className="text-sm font-medium">启用 AI 分析</div>
-              <div className="text-xs text-macos-text-tertiary">使用本地 AI 模型分析可清理内容</div>
+              <div className="text-xs text-macos-text-tertiary">使用 AI 模型分析未知目录和清理建议</div>
             </div>
             <ToggleSwitch checked={aiEnabled} onChange={handleAiChange} />
           </div>
           {aiEnabled && (
-            <div className="py-2.5">
-              <div className="flex items-center justify-between">
+            <>
+              {/* Provider selector */}
+              <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
                 <div>
-                  <div className="text-sm font-medium">Ollama 地址</div>
-                  <div className="text-xs text-macos-text-tertiary">本地 Ollama 服务地址</div>
+                  <div className="text-sm font-medium">AI 模型</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={ollamaUrl}
-                    onChange={(e) => handleOllamaUrlChange(e.target.value)}
-                    placeholder="http://localhost:11434"
-                    className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
-                  />
-                  <button
-                    onClick={testOllamaConnection}
-                    disabled={ollamaTestStatus === 'testing'}
-                    className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
-                  >
-                    {ollamaTestStatus === 'testing' ? '测试中' :
-                     ollamaTestStatus === 'ok' ? '✓ 已连接' :
-                     ollamaTestStatus === 'fail' ? '✗ 失败' : '测试连接'}
-                  </button>
-                </div>
+                <select
+                  value={aiProvider}
+                  onChange={(e) => handleAiProviderChange(e.target.value as typeof aiProvider)}
+                  className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
+                >
+                  <option value="ollama">Ollama（本地，免费）</option>
+                  <option value="openai">OpenAI 兼容</option>
+                  <option value="anthropic">Anthropic（Claude）</option>
+                </select>
               </div>
-              <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，不会产生后台费用</p>
-            </div>
+
+              {/* Ollama config */}
+              {aiProvider === 'ollama' && (
+                <div className="py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">服务地址</div>
+                      <div className="text-xs text-macos-text-tertiary">本地 Ollama 服务地址</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={ollamaUrl}
+                        onChange={(e) => { setOllamaUrl(e.target.value); saveAiField('ollamaUrl', e.target.value); }}
+                        placeholder="http://localhost:11434"
+                        className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      />
+                      <button
+                        onClick={testOllamaConnection}
+                        disabled={ollamaTestStatus === 'testing'}
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                      >
+                        {ollamaTestStatus === 'testing' ? '测试中' :
+                         ollamaTestStatus === 'ok' ? '✓ 已连接' :
+                         ollamaTestStatus === 'fail' ? '✗ 失败' : '测试连接'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2.5">
+                    <div>
+                      <div className="text-sm font-medium">模型</div>
+                    </div>
+                    <input
+                      type="text"
+                      value={ollamaModel}
+                      onChange={(e) => { setOllamaModel(e.target.value); saveAiField('ollamaModel', e.target.value); }}
+                      placeholder="llama3.2"
+                      className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，不会产生后台费用</p>
+                </div>
+              )}
+
+              {/* OpenAI-compatible config */}
+              {aiProvider === 'openai' && (
+                <div className="py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">API 地址</div>
+                      <div className="text-xs text-macos-text-tertiary">OpenAI / DeepSeek / Groq 等兼容地址</div>
+                    </div>
+                    <input
+                      type="text"
+                      value={openaiUrl}
+                      onChange={(e) => { setOpenaiUrl(e.target.value); saveAiField('openaiUrl', e.target.value); }}
+                      placeholder="https://api.openai.com/v1"
+                      className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-2.5">
+                    <div>
+                      <div className="text-sm font-medium">API Key</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type={showApiKey ? 'text' : 'password'}
+                        value={openaiApiKey}
+                        onChange={(e) => { setOpenaiApiKey(e.target.value); saveAiField('openaiApiKey', e.target.value); }}
+                        placeholder="sk-..."
+                        className="w-40 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      />
+                      <button
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover transition-colors"
+                      >
+                        {showApiKey ? '隐藏' : '显示'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2.5">
+                    <div>
+                      <div className="text-sm font-medium">模型</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={openaiModel}
+                        onChange={(e) => { setOpenaiModel(e.target.value); saveAiField('openaiModel', e.target.value); }}
+                        placeholder="gpt-4o-mini"
+                        className="w-40 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      />
+                      <button
+                        onClick={testConnection}
+                        disabled={cloudTestStatus === 'testing'}
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                      >
+                        {cloudTestStatus === 'testing' ? '测试中' :
+                         cloudTestStatus === 'ok' ? '✓ 已连接' :
+                         cloudTestStatus === 'fail' ? '✗ 失败' : '测试连接'}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-macos-text-tertiary mt-1.5">支持 OpenAI、DeepSeek、Groq、Together 等兼容协议</p>
+                </div>
+              )}
+
+              {/* Anthropic config */}
+              {aiProvider === 'anthropic' && (
+                <div className="py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium">API Key</div>
+                      <div className="text-xs text-macos-text-tertiary">
+                        从 <a href="https://console.anthropic.com/settings/keys" onClick={(e) => { e.preventDefault(); openExternal('https://console.anthropic.com/settings/keys'); }} className="text-macos-accent hover:text-macos-accent-hover">Anthropic Console</a> 获取
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type={showApiKey ? 'text' : 'password'}
+                        value={anthropicApiKey}
+                        onChange={(e) => { setAnthropicApiKey(e.target.value); saveAiField('anthropicApiKey', e.target.value); }}
+                        placeholder="sk-ant-api03-..."
+                        className="w-40 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      />
+                      <button
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover transition-colors"
+                      >
+                        {showApiKey ? '隐藏' : '显示'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2.5">
+                    <div>
+                      <div className="text-sm font-medium">模型</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={anthropicModel}
+                        onChange={(e) => { setAnthropicModel(e.target.value); saveAiField('anthropicModel', e.target.value); }}
+                        className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      >
+                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6（推荐）</option>
+                        <option value="claude-haiku-4-5">Claude Haiku 4.5（更便宜）</option>
+                      </select>
+                      <button
+                        onClick={testConnection}
+                        disabled={cloudTestStatus === 'testing'}
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                      >
+                        {cloudTestStatus === 'testing' ? '测试中' :
+                         cloudTestStatus === 'ok' ? '✓ 已连接' :
+                         cloudTestStatus === 'fail' ? '✗ 失败' : '测试连接'}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，按 token 计费</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

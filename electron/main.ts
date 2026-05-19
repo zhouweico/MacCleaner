@@ -15,7 +15,6 @@ import { autoUpdater } from 'electron-updater';
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.allowPrerelease = true;
-autoUpdater.autoCheckForUpdates = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
@@ -317,6 +316,9 @@ app.whenReady().then(() => {
   ipcMain.handle('shell:open-external', (_e, url: string) => {
     shell.openExternal(url);
   });
+
+  // Auto-check for updates on startup
+  autoUpdater.checkForUpdatesAndNotify();
 });
 
 // Auto-update events
@@ -376,5 +378,10 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (mainWindow === null) createWindow();
+  if (mainWindow === null) {
+    createWindow();
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });

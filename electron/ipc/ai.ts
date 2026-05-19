@@ -1,8 +1,13 @@
 import { ipcMain } from 'electron';
-import { analyzeWithOllama } from '../services/ai-analyzer';
+import { analyzeDirectory, testProviderConnection, type AiProviderConfig } from '../services/ai-analyzer';
 
 export function registerAiHandlers() {
-  ipcMain.handle('ai:analyze', async (_event, dirPath: string, ollamaUrl?: string) => {
-    return analyzeWithOllama(dirPath, ollamaUrl);
+  ipcMain.handle('ai:analyze', async (_event, dirPath: string, providerConfig?: AiProviderConfig) => {
+    return analyzeDirectory(dirPath, providerConfig ?? { type: 'ollama' });
+  });
+
+  ipcMain.handle('ai:test-connection', async (_event, config: AiProviderConfig) => {
+    const ok = await testProviderConnection(config);
+    return { success: ok };
   });
 }

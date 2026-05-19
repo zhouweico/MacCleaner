@@ -108,8 +108,19 @@ export interface AiAnalysisResult {
   recommendedAction: string;
 }
 
-export async function aiAnalyze(dirPath: string, ollamaUrl?: string): Promise<AiAnalysisResult> {
-  return window.electronAPI.ipc.invoke('ai:analyze', dirPath, ollamaUrl) as Promise<AiAnalysisResult>;
+export interface AiProviderConfig {
+  type: 'ollama' | 'openai' | 'anthropic';
+  url?: string;
+  model?: string;
+  apiKey?: string;
+}
+
+export async function aiAnalyze(dirPath: string, config?: AiProviderConfig): Promise<AiAnalysisResult> {
+  return window.electronAPI.ipc.invoke('ai:analyze', dirPath, config) as Promise<AiAnalysisResult>;
+}
+
+export async function testAiConnection(config: AiProviderConfig): Promise<{ success: boolean }> {
+  return window.electronAPI.ipc.invoke('ai:test-connection', config) as Promise<{ success: boolean }>;
 }
 
 export function showAbout() {
