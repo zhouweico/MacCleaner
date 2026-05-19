@@ -28,7 +28,7 @@ macOS 深度磁盘清理与 APP 卸载工具。覆盖包管理器缓存、开发
 ### ⚡ 其他功能
 
 - **双形态界面**：菜单栏弹出面板 + 完整窗口模式
-- **AI 增强分析**：本地 Ollama 模型识别未知目录（可选）
+- **AI 增强分析**：支持 Ollama（本地免费）/ OpenAI 兼容协议（DeepSeek/Groq）/ Anthropic（Claude）三模型
 - **定时扫描**：每日自动扫描，cron 表达式配置
 - **自动更新**：基于 GitHub Releases，启动时自动检查
 - **操作日志**：所有清理/卸载操作记录，最多保留 200 条
@@ -133,6 +133,8 @@ cleaner/
 | Zustand | 5.x |
 | electron-updater | 6.8+ |
 | electron-builder | 25.x |
+
+**AI 模型**：Ollama（llama3.2 等）/ OpenAI（gpt-4o 等）/ Anthropic（claude-sonnet/haiku）
 
 ## 📝 许可证
 
