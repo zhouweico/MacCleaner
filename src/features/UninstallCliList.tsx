@@ -5,6 +5,7 @@ import { formatBytes } from '@/lib/format';
 import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
+import AiDrawer from '@/components/AiDrawer';
 
 type CliTool = AppState['cliTools'][number];
 
@@ -110,6 +111,10 @@ function UninstallCliList() {
 export function UninstallCliDetail() {
   const { selectedItem, selectedPaths, cliTools, setCliTools, clearSelection } = useAppStore();
   const [uninstalling, setUninstalling] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+
+  // 切换选中项时关闭抽屉
+  useEffect(() => { setAiOpen(false); }, [selectedItem?.path]);
 
   async function handleUninstall() {
     setUninstalling(true);
@@ -160,7 +165,7 @@ export function UninstallCliDetail() {
   const selectedCount = selectedPaths.size;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -186,17 +191,38 @@ export function UninstallCliDetail() {
           <div className="flex justify-between"><span className="text-macos-text-secondary">来源</span><span>{tool.source}</span></div>
         </div>
       </AutoHideScroll>
+      {aiOpen && (
+        <>
+          <button
+            onClick={() => setAiOpen(false)}
+            className="absolute right-4 top-3 z-50 flex h-8 w-8 items-center justify-center rounded-lg text-macos-text-tertiary hover:bg-white/5 transition-colors"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <AiDrawer dirPath={tool.path || ''} dirName={tool.name} dirSize={tool.size} />
+        </>
+      )}
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
         </div>
-        <button
-          onClick={handleUninstall}
-          disabled={uninstalling}
-          className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
-        >
-          {uninstalling ? '卸载中...' : '卸载'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setAiOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 transition-colors" title="AI 分析">
+            <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </button>
+          <button
+            onClick={handleUninstall}
+            disabled={uninstalling}
+            className="rounded-lg bg-macos-red px-4 py-2 text-sm font-bold hover:bg-macos-red-hover disabled:opacity-50"
+          >
+            {uninstalling ? '卸载中...' : '卸载'}
+          </button>
+        </div>
       </div>
     </div>
   );

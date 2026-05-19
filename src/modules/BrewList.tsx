@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAppStore, type SelectedItem } from '@/store';
 import { scanModule } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
@@ -8,6 +8,7 @@ import type { ScanItem } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
+import AiDrawer from '@/components/AiDrawer';
 
 function BrewList() {
   const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
@@ -102,6 +103,11 @@ function BrewList() {
 export function BrewDetail() {
   const { selectedItem, selectedPaths, scanResults, setScanning, clearSelection } = useAppStore();
   const result = scanResults['brew'];
+  const [aiOpen, setAiOpen] = useState(false);
+
+  // 切换选中项时关闭抽屉
+  useEffect(() => { setAiOpen(false); }, [selectedItem?.path]);
+
   const { doSafeClean } = useClean();
 
   async function handleClean() {
@@ -134,7 +140,7 @@ export function BrewDetail() {
 
   const item = selectedItem as unknown as ScanItem;
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -164,6 +170,20 @@ export function BrewDetail() {
           </div>
         )}
       </AutoHideScroll>
+      {aiOpen && (
+        <>
+          <button
+            onClick={() => setAiOpen(false)}
+            className="absolute right-4 top-3 z-50 flex h-8 w-8 items-center justify-center rounded-lg text-macos-text-tertiary hover:bg-white/5 transition-colors"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <AiDrawer dirPath={item.path} dirName={item.name} dirSize={item.size} />
+        </>
+      )}
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
           <span><span className="font-bold">{selectedPaths.size}</span> <span className="text-macos-text-tertiary">项已选</span></span>

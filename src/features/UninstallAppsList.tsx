@@ -7,6 +7,7 @@ import type { AppInfo, AssociatedFile } from '@/types';
 import SelectionSummary from '@/components/SelectionSummary';
 import FinderIcon from '@/components/FinderIcon';
 import AutoHideScroll from '@/components/AutoHideScroll';
+import AiDrawer from '@/components/AiDrawer';
 
 // 按类型分组文件
 function groupFilesByType(files: AssociatedFile[]) {
@@ -308,6 +309,10 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
   const selectedSize = Array.from(checkedFiles)
     .map(p => app.associatedFiles.find(f => f.path === p)?.size ?? 0)
     .reduce((s, v) => s + v, 0);
+  const [aiOpen, setAiOpen] = useState(false);
+
+  // 切换选中项时关闭抽屉
+  useEffect(() => { setAiOpen(false); }, [app.path]);
 
   function toggleFile(path: string, checked: boolean) {
     setCheckedFiles(prev => {
@@ -334,7 +339,7 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       {/* Header */}
       <div className="border-b border-macos-separator px-4 py-3">
         <div className="flex items-start justify-between">
@@ -387,6 +392,20 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
           />
         ))}
       </AutoHideScroll>
+      {aiOpen && (
+        <>
+          <button
+            onClick={() => setAiOpen(false)}
+            className="absolute right-4 top-3 z-50 flex h-8 w-8 items-center justify-center rounded-lg text-macos-text-tertiary hover:bg-white/5 transition-colors"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <AiDrawer dirPath={app.path} dirName={app.name} dirSize={totalSize} />
+        </>
+      )}
 
       {/* Bottom action bar */}
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
@@ -394,7 +413,12 @@ function AppDetailContent({ app, keepUserData, setKeepUserData, checkedFiles, se
           <span><span className="font-bold">{formatBytes(selectedSize)}</span> <span className="text-macos-text-tertiary">所选</span></span>
           <span><span className="font-bold">{selectedCount}</span> <span className="text-macos-text-tertiary">项已选</span></span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setAiOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 transition-colors" title="AI 分析">
+            <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </button>
           <button
             onClick={() => setSelectedItem(null)}
             className="rounded-lg bg-macos-surface px-4 py-2 text-sm font-medium hover:bg-macos-surface-hover"
