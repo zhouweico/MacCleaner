@@ -119,8 +119,8 @@ export async function aiAnalyze(dirPath: string, config?: AiProviderConfig): Pro
   return window.electronAPI.ipc.invoke('ai:analyze', dirPath, config) as Promise<AiAnalysisResult>;
 }
 
-export async function testAiConnection(config: AiProviderConfig): Promise<{ success: boolean }> {
-  return window.electronAPI.ipc.invoke('ai:test-connection', config) as Promise<{ success: boolean }>;
+export async function testAiConnection(config: AiProviderConfig): Promise<{ success: boolean; error?: string }> {
+  return window.electronAPI.ipc.invoke('ai:test-connection', config) as Promise<{ success: boolean; error?: string }>;
 }
 
 export function showAbout() {

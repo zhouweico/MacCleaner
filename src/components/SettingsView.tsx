@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { registerSchedule, getOperationLogs, clearOperationLogs, checkForUpdates, getAppInfo, openExternal, testAiConnection } from '@/lib/ipc';
 import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import AutoHideScroll from '@/components/AutoHideScroll';
@@ -76,8 +76,117 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
   );
 }
 
+// Custom dropdown select
+function CompactSelect({ value, options, onChange, width }: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  width?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const btnWidth = width ?? '48px';
+  const btnWidthNum = parseInt(btnWidth);
+  const dropdownWidth = `${btnWidthNum + 16}px`;
+
+  const currentIndex = options.indexOf(value);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setHighlightedIndex(0);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // Keyboard navigation when open
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setHighlightedIndex(prev => Math.min(prev + 1, options.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setHighlightedIndex(prev => Math.max(prev - 1, 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        onChange(options[highlightedIndex]);
+        setOpen(false);
+        setHighlightedIndex(0);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setOpen(false);
+        setHighlightedIndex(0);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, highlightedIndex, options, onChange]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (!open || !dropdownRef.current) return;
+    const highlightedBtn = dropdownRef.current.children[highlightedIndex] as HTMLElement;
+    if (highlightedBtn) {
+      highlightedBtn.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    }
+  }, [highlightedIndex, open]);
+
+  // Reset highlight index when opening
+  useEffect(() => {
+    if (open) setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(!open)}
+        className="bg-macos-sidebar-hover/60 border border-macos-separator rounded-lg px-2.5 py-1.5 text-sm text-macos-text-primary focus:border-macos-accent focus:outline-none cursor-pointer text-center hover:bg-macos-surface-hover transition-colors"
+        style={{ width: btnWidth }}
+      >
+        {value}
+      </button>
+      {open && (
+        <div ref={dropdownRef} className="absolute left-0 top-full mt-1 bg-macos-surface border border-macos-separator rounded-lg shadow-lg z-[100] overflow-y-auto" style={{ maxHeight: 200, width: dropdownWidth }}>
+            {options.map((o, idx) => (
+              <button
+                key={o}
+                onMouseEnter={() => setHighlightedIndex(idx)}
+                onClick={() => { onChange(o); setOpen(false); setHighlightedIndex(0); }}
+                className={`w-full text-sm text-left transition-colors flex items-center gap-1 rounded-lg px-2 py-1 ${
+                  highlightedIndex === idx
+                    ? 'bg-macos-accent text-white'
+                    : 'text-macos-text-primary hover:bg-macos-accent'
+                }`}
+              >
+                <span className="w-4 text-center shrink-0">{o === value ? '✓' : ''}</span>
+                <span>{o}</span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsView() {
-  const [scanTime, setScanTime] = useState(() => loadSettings().scanTime);
+  const [scanTime, setScanTime] = useState(() => {
+    const t = loadSettings().scanTime;
+    const [h, m] = t.split(':');
+    let hour = parseInt(h, 10);
+    let minute = Math.round(parseInt(m, 10) / 5) * 5;
+    if (minute >= 60) { minute = 0; hour = (hour + 1) % 24; }
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  });
   const [scheduleEnabled, setScheduleEnabled] = useState(() => loadSettings().scheduleEnabled);
   const [aiEnabled, setAiEnabled] = useState(() => loadSettings().aiEnabled);
   const [aiProvider, setAiProvider] = useState<'ollama' | 'openai' | 'anthropic'>(() => loadSettings().aiProvider);
@@ -89,7 +198,9 @@ function SettingsView() {
   const [anthropicApiKey, setAnthropicApiKey] = useState(() => loadSettings().anthropicApiKey);
   const [anthropicModel, setAnthropicModel] = useState(() => loadSettings().anthropicModel);
   const [ollamaTestStatus, setOllamaTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [ollamaTestError, setOllamaTestError] = useState<string>('');
   const [cloudTestStatus, setCloudTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [cloudTestError, setCloudTestError] = useState<string>('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
     const s = loadSettings();
@@ -102,7 +213,11 @@ function SettingsView() {
 
   useEffect(() => {
     const s = loadSettings();
-    setScanTime(s.scanTime);
+    let [h, m] = s.scanTime.split(':');
+    let hour = parseInt(h, 10);
+    let minute = Math.round(parseInt(m, 10) / 5) * 5;
+    if (minute >= 60) { minute = 0; hour = (hour + 1) % 24; }
+    setScanTime(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     setScheduleEnabled(s.scheduleEnabled);
     setAiEnabled(s.aiEnabled);
     setAiProvider(s.aiProvider);
@@ -143,6 +258,10 @@ function SettingsView() {
 
   function handleAiChange(enabled: boolean) {
     setAiEnabled(enabled);
+    setOllamaTestStatus('idle');
+    setOllamaTestError('');
+    setCloudTestStatus('idle');
+    setCloudTestError('');
     const current = loadSettings();
     saveSettings({ ...current, aiEnabled: enabled });
     window.dispatchEvent(new Event('settings-changed'));
@@ -150,6 +269,10 @@ function SettingsView() {
 
   function handleAiProviderChange(provider: 'ollama' | 'openai' | 'anthropic') {
     setAiProvider(provider);
+    setOllamaTestStatus('idle');
+    setOllamaTestError('');
+    setCloudTestStatus('idle');
+    setCloudTestError('');
     const current = loadSettings();
     saveSettings({ ...current, aiProvider: provider });
     window.dispatchEvent(new Event('settings-changed'));
@@ -164,13 +287,16 @@ function SettingsView() {
   async function testConnection() {
     const config = getProviderConfig();
     setCloudTestStatus('testing');
+    setCloudTestError('');
     try {
       const res = await testAiConnection(config);
       setCloudTestStatus(res.success ? 'ok' : 'fail');
-    } catch {
+      setCloudTestError(res.error ?? '');
+    } catch (e) {
       setCloudTestStatus('fail');
+      setCloudTestError(e instanceof Error ? e.message : '未知错误');
     }
-    setTimeout(() => setCloudTestStatus('idle'), 3000);
+    setTimeout(() => { setCloudTestStatus('idle'); setCloudTestError(''); }, 5000);
   }
 
   function getProviderConfig(): AiProviderConfig {
@@ -211,13 +337,16 @@ function SettingsView() {
 
   async function testOllamaConnection() {
     setOllamaTestStatus('testing');
+    setOllamaTestError('');
     try {
       const res = await testAiConnection({ type: 'ollama', url: ollamaUrl, model: ollamaModel });
       setOllamaTestStatus(res.success ? 'ok' : 'fail');
-    } catch {
+      setOllamaTestError(res.error ?? '');
+    } catch (e) {
       setOllamaTestStatus('fail');
+      setOllamaTestError(e instanceof Error ? e.message : '未知错误');
     }
-    setTimeout(() => setOllamaTestStatus('idle'), 3000);
+    setTimeout(() => { setOllamaTestStatus('idle'); setOllamaTestError(''); }, 5000);
   }
 
   return (
@@ -230,7 +359,7 @@ function SettingsView() {
         </div>
 
         {/* Schedule card */}
-        <div className="rounded-xl bg-macos-surface mb-3 overflow-hidden">
+        <div className="rounded-xl bg-macos-surface mb-3 overflow-visible">
         <div className="px-4 py-2.5 border-b border-macos-separator">
           <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">定时扫描</h2>
         </div>
@@ -247,12 +376,19 @@ function SettingsView() {
               <div>
                 <div className="text-sm font-medium">扫描时间</div>
               </div>
-              <input
-                type="time"
-                value={scanTime}
-                onChange={(e) => handleScanTimeChange(e.target.value)}
-                className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
-              />
+              <div className="flex items-center gap-1">
+                <CompactSelect
+                  value={scanTime.split(':')[0]}
+                  options={Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))}
+                  onChange={(h) => handleScanTimeChange(`${h}:${scanTime.split(':')[1]}`)}
+                />
+                <span className="text-macos-text-tertiary text-sm">:</span>
+                <CompactSelect
+                  value={scanTime.split(':')[1]}
+                  options={Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))}
+                  onChange={(m) => handleScanTimeChange(`${scanTime.split(':')[0]}:${m}`)}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -279,21 +415,18 @@ function SettingsView() {
                 <div>
                   <div className="text-sm font-medium">AI 模型</div>
                 </div>
-                <select
-                  value={aiProvider}
-                  onChange={(e) => handleAiProviderChange(e.target.value as typeof aiProvider)}
-                  className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
-                >
-                  <option value="ollama">Ollama（本地，免费）</option>
-                  <option value="openai">OpenAI 兼容</option>
-                  <option value="anthropic">Anthropic（Claude）</option>
-                </select>
+                <CompactSelect
+                  value={aiProvider === 'ollama' ? 'Ollama' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'}
+                  options={['Ollama', 'OpenAI', 'Anthropic']}
+                  onChange={(v) => handleAiProviderChange(v === 'Ollama' ? 'ollama' : v === 'OpenAI' ? 'openai' : 'anthropic')}
+                  width="100px"
+                />
               </div>
 
               {/* Ollama config */}
               {aiProvider === 'ollama' && (
                 <div className="py-2.5">
-                  <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center">
                     <div>
                       <div className="text-sm font-medium">服务地址</div>
                       <div className="text-xs text-macos-text-tertiary">本地 Ollama 服务地址</div>
@@ -304,12 +437,30 @@ function SettingsView() {
                         value={ollamaUrl}
                         onChange={(e) => { setOllamaUrl(e.target.value); saveAiField('ollamaUrl', e.target.value); }}
                         placeholder="http://localhost:11434"
-                        className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                        className="w-full rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center mt-2.5">
+                    <div className="text-sm font-medium">模型</div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={ollamaModel}
+                        onChange={(e) => { setOllamaModel(e.target.value); saveAiField('ollamaModel', e.target.value); }}
+                        placeholder="llama3.2"
+                        className="w-48 rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
                       />
                       <button
                         onClick={testOllamaConnection}
                         disabled={ollamaTestStatus === 'testing'}
-                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                        className={`text-xs rounded px-2 py-1 transition-colors shrink-0 ${
+                          ollamaTestStatus === 'ok'
+                            ? 'bg-macos-green/20 text-macos-green'
+                            : ollamaTestStatus === 'fail'
+                              ? 'bg-macos-red/20 text-macos-red'
+                              : 'bg-macos-surface text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40'
+                        }`}
                       >
                         {ollamaTestStatus === 'testing' ? '测试中' :
                          ollamaTestStatus === 'ok' ? '✓ 已连接' :
@@ -317,26 +468,17 @@ function SettingsView() {
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2.5">
-                    <div>
-                      <div className="text-sm font-medium">模型</div>
-                    </div>
-                    <input
-                      type="text"
-                      value={ollamaModel}
-                      onChange={(e) => { setOllamaModel(e.target.value); saveAiField('ollamaModel', e.target.value); }}
-                      placeholder="llama3.2"
-                      className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
-                    />
-                  </div>
                   <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，不会产生后台费用</p>
+                  {ollamaTestError && (
+                    <p className="text-xs text-macos-red mt-1">{ollamaTestError}</p>
+                  )}
                 </div>
               )}
 
               {/* OpenAI-compatible config */}
               {aiProvider === 'openai' && (
                 <div className="py-2.5">
-                  <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center">
                     <div>
                       <div className="text-sm font-medium">API 地址</div>
                       <div className="text-xs text-macos-text-tertiary">OpenAI / DeepSeek / Groq 等兼容地址</div>
@@ -346,45 +488,47 @@ function SettingsView() {
                       value={openaiUrl}
                       onChange={(e) => { setOpenaiUrl(e.target.value); saveAiField('openaiUrl', e.target.value); }}
                       placeholder="https://api.openai.com/v1"
-                      className="w-52 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                      className="w-full rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
                     />
                   </div>
-                  <div className="flex items-center justify-between mt-2.5">
-                    <div>
-                      <div className="text-sm font-medium">API Key</div>
-                    </div>
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center mt-2.5">
+                    <div className="text-sm font-medium">API Key</div>
                     <div className="flex items-center gap-2">
                       <input
                         type={showApiKey ? 'text' : 'password'}
                         value={openaiApiKey}
                         onChange={(e) => { setOpenaiApiKey(e.target.value); saveAiField('openaiApiKey', e.target.value); }}
                         placeholder="sk-..."
-                        className="w-40 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                        className="w-64 rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
                       />
                       <button
                         onClick={() => setShowApiKey(!showApiKey)}
-                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover transition-colors"
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover transition-colors shrink-0"
                       >
                         {showApiKey ? '隐藏' : '显示'}
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2.5">
-                    <div>
-                      <div className="text-sm font-medium">模型</div>
-                    </div>
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center mt-2.5">
+                    <div className="text-sm font-medium">模型</div>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={openaiModel}
                         onChange={(e) => { setOpenaiModel(e.target.value); saveAiField('openaiModel', e.target.value); }}
                         placeholder="gpt-4o-mini"
-                        className="w-40 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                        className="w-48 rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
                       />
                       <button
                         onClick={testConnection}
                         disabled={cloudTestStatus === 'testing'}
-                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                        className={`text-xs rounded px-2 py-1 transition-colors shrink-0 ${
+                          cloudTestStatus === 'ok'
+                            ? 'bg-macos-green/20 text-macos-green'
+                            : cloudTestStatus === 'fail'
+                              ? 'bg-macos-red/20 text-macos-red'
+                              : 'bg-macos-surface text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40'
+                        }`}
                       >
                         {cloudTestStatus === 'testing' ? '测试中' :
                          cloudTestStatus === 'ok' ? '✓ 已连接' :
@@ -393,13 +537,16 @@ function SettingsView() {
                     </div>
                   </div>
                   <p className="text-xs text-macos-text-tertiary mt-1.5">支持 OpenAI、DeepSeek、Groq、Together 等兼容协议</p>
+                  {cloudTestError && (
+                    <p className="text-xs text-macos-red mt-1">{cloudTestError}</p>
+                  )}
                 </div>
               )}
 
               {/* Anthropic config */}
               {aiProvider === 'anthropic' && (
                 <div className="py-2.5">
-                  <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center">
                     <div>
                       <div className="text-sm font-medium">API Key</div>
                       <div className="text-xs text-macos-text-tertiary">
@@ -412,25 +559,23 @@ function SettingsView() {
                         value={anthropicApiKey}
                         onChange={(e) => { setAnthropicApiKey(e.target.value); saveAiField('anthropicApiKey', e.target.value); }}
                         placeholder="sk-ant-api03-..."
-                        className="w-40 rounded-lg bg-macos-content px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
+                        className="w-64 rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-white border border-macos-separator focus:border-macos-accent focus:outline-none"
                       />
                       <button
                         onClick={() => setShowApiKey(!showApiKey)}
-                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover transition-colors"
+                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover transition-colors shrink-0"
                       >
                         {showApiKey ? '隐藏' : '显示'}
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2.5">
-                    <div>
-                      <div className="text-sm font-medium">模型</div>
-                    </div>
+                  <div className="grid grid-cols-[1fr_320px] gap-x-4 items-center mt-2.5">
+                    <div className="text-sm font-medium">模型</div>
                     <div className="flex items-center gap-2">
                       <select
                         value={anthropicModel}
                         onChange={(e) => { setAnthropicModel(e.target.value); saveAiField('anthropicModel', e.target.value); }}
-                        className="rounded-lg bg-macos-content px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
+                        className="rounded-lg bg-macos-sidebar-hover/60 px-3 py-1.5 text-sm text-macos-text-primary border border-macos-separator focus:border-macos-accent focus:outline-none"
                       >
                         <option value="claude-sonnet-4-6">Claude Sonnet 4.6（推荐）</option>
                         <option value="claude-haiku-4-5">Claude Haiku 4.5（更便宜）</option>
@@ -438,7 +583,13 @@ function SettingsView() {
                       <button
                         onClick={testConnection}
                         disabled={cloudTestStatus === 'testing'}
-                        className="text-xs rounded bg-macos-surface px-2 py-1 text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40 transition-colors"
+                        className={`text-xs rounded px-2 py-1 transition-colors shrink-0 ${
+                          cloudTestStatus === 'ok'
+                            ? 'bg-macos-green/20 text-macos-green'
+                            : cloudTestStatus === 'fail'
+                              ? 'bg-macos-red/20 text-macos-red'
+                              : 'bg-macos-surface text-macos-text-secondary hover:bg-macos-surface-hover disabled:opacity-40'
+                        }`}
                       >
                         {cloudTestStatus === 'testing' ? '测试中' :
                          cloudTestStatus === 'ok' ? '✓ 已连接' :
@@ -447,6 +598,9 @@ function SettingsView() {
                     </div>
                   </div>
                   <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，按 token 计费</p>
+                  {cloudTestError && (
+                    <p className="text-xs text-macos-red mt-1">{cloudTestError}</p>
+                  )}
                 </div>
               )}
             </>

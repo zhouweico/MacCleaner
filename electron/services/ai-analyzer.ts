@@ -58,13 +58,13 @@ export async function analyzeDirectory(
 /**
  * Test connection to an AI provider.
  */
-export async function testProviderConnection(config: AiProviderConfig): Promise<boolean> {
+export async function testProviderConnection(config: AiProviderConfig): Promise<{ success: boolean; error?: string }> {
   try {
     switch (config.type) {
       case 'ollama': {
         const url = config.url || 'http://localhost:11434';
         await callOllama(url, 'Say "ok"', config.model || 'llama3.2');
-        return true;
+        return { success: true };
       }
       case 'openai': {
         const url = config.url || 'https://api.openai.com/v1';
@@ -78,7 +78,11 @@ export async function testProviderConnection(config: AiProviderConfig): Promise<
           },
           body: JSON.stringify({ model, messages: [{ role: 'user', content: 'ok' }], max_tokens: 1 }),
         });
-        return resp.ok;
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => null);
+          return { success: false, error: `API ${resp.status}: ${body?.error?.message ?? resp.statusText}` };
+        }
+        return { success: true };
       }
       case 'anthropic': {
         const apiKey = config.apiKey || '';
@@ -92,13 +96,17 @@ export async function testProviderConnection(config: AiProviderConfig): Promise<
           },
           body: JSON.stringify({ model, messages: [{ role: 'user', content: 'ok' }], max_tokens: 1 }),
         });
-        return resp.ok;
+        if (!resp.ok) {
+          const body = await resp.json().catch(() => null);
+          return { success: false, error: `API ${resp.status}: ${body?.error?.message ?? resp.statusText}` };
+        }
+        return { success: true };
       }
       default:
-        return false;
+        return { success: false, error: '未知的 AI 提供商' };
     }
-  } catch {
-    return false;
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : '连接失败' };
   }
 }
 

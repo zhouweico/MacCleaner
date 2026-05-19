@@ -7,7 +7,6 @@ export function registerAiHandlers() {
   });
 
   ipcMain.handle('ai:test-connection', async (_event, config: AiProviderConfig) => {
-    const ok = await testProviderConnection(config);
-    return { success: ok };
+    return testProviderConnection(config);
   });
 }
