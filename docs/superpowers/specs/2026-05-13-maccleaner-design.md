@@ -1,7 +1,7 @@
 # MacCleaner — 磁盘清理 macOS APP 设计文档
 
 > 日期: 2026-05-13
-> 状态: 待审批
+> 状态: 已部分实现（更新于 2026-05-19）
 
 ## 1. 产品定位
 
@@ -616,3 +616,154 @@ Tray 图标已移除右键菜单。
 - 窗口可拖拽
 - 不可拖拽（关闭按钮可拖拽区域外）
 - 深色主题，与应用设计语言一致
+
+## 14. 自动更新（新增，设计文档外）
+
+### 14.1 技术栈
+
+- **electron-updater** 6.x + GitHub Releases
+- `allowPrerelease = true`（支持预发布版本）
+- `autoCheckForUpdates = true`（启动时自动检查）
+- `autoDownload = false`（用户确认后下载）
+
+### 14.2 更新流程
+
+```
+应用启动 → 自动检查 GitHub Releases
+  ├─ 有新版本 → 弹窗询问「发现新版本，是否下载？」
+  │   ├─ 下载 → 显示进度 → 下载完成 → 弹窗询问「安装并重启？」
+  │   └─ 取消 → 不处理
+  └─ 已是最新 → Toast 通知「当前已是最新版本」（3秒自动消失）
+```
+
+### 14.3 手动检查
+
+- 设置页「关于」卡片：版本号 + 「检查并更新」按钮
+- 应用菜单「MacCleaner → 检查更新」
+- `Cmd+,` 打开设置页，快速触发检查
+
+### 14.4 更新日志
+
+- 设置页「更新日志」按钮 → 通过 `shell.openExternal` 在系统浏览器打开 GitHub Releases 页面
+
+### 14.5 关键文件
+
+| 文件 | 说明 |
+|------|------|
+| `latest-mac.yml` | 版本元数据（hash、size），由 electron-builder 自动生成 |
+| `MacCleaner-{version}-mac.zip` | Squirrel.Mac 更新包 |
+| `MacCleaner-{version}.dmg` | 安装镜像 |
+
+## 15. Toast 通知（新增，设计文档外）
+
+### 15.1 设计
+
+- 底部居中滑入动画（`@keyframes slide-up`）
+- 3 秒自动消失
+- 三种类型：`success`（绿色勾）/ `error`（红色叉）/ `info`（蓝色信息）
+
+### 15.2 技术实现
+
+- `src/components/Toast.tsx` — 轻量级状态管理（无需外部依赖）
+- 主进程通过 IPC `toast:show` 触发
+- 渲染进程 `ToastProvider` 包裹根组件
+
+## 16. 实现状态总结
+
+### 16.1 已完成（100%）
+
+| 模块 | 完成度 |
+|------|--------|
+| 项目架构（Electron + React + TS + Vite） | ✅ |
+| 三栏布局（设计为两栏，实际扩展） | ✅ |
+| 仪表盘 | ✅ |
+| Brew 缓存清理 | ✅ |
+| Docker 清理 | ✅ |
+| npm/Node 清理 | ✅ |
+| Conda/Python 清理 | ✅ |
+| 系统缓存清理 | ✅ |
+| CLI 工具列表 | ✅ |
+| Downloads 管理 | ✅ |
+| APP 卸载 | ✅ |
+| CLI 工具卸载 | ✅ |
+| APP 残留清理 | ✅ |
+| AI 增强分析（Ollama） | ✅ |
+| 定时扫描 | ✅ |
+| 操作日志 | ✅ |
+| 设置页 | ✅ |
+| 全局快捷键 | ✅ |
+| 关于面板 | ✅ |
+| 自动更新 | ✅ |
+| Toast 通知 | ✅ |
+| macOS 深色主题 | ✅ |
+
+### 16.2 待实现（低优先级）
+
+| 项 | 优先级 | 说明 |
+|----|--------|------|
+| AI 云端 Claude API | P2 | 设计 6.3 节提到双模型支持 |
+| 发布自动化（GitHub Actions） | P2 | 自动化 Release 创建 + 资产上传 |
+
+### 16.3 当前目录结构
+
+```
+cleaner/
+├── package.json
+├── electron/
+│   ├── main.ts              # Electron 主进程
+│   ├── preload.cjs          # 预加载脚本
+│   ├── about.html           # 关于面板 HTML
+│   ├── ipc/                 # IPC handlers
+│   │   ├── scan.ts
+│   │   ├── clean.ts
+│   │   ├── uninstall.ts
+│   │   ├── schedule.ts
+│   │   └── ai.ts
+│   └── services/            # 后端服务
+│       ├── scanner.ts
+│       ├── cleaner.ts
+│       ├── uninstaller.ts
+│       ├── scheduler.ts
+│       ├── ai-analyzer.ts
+│       └── operation-log.ts
+├── src/                     # React 前端
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── index.css            # 全局样式 + Tailwind
+│   ├── components/          # 通用组件
+│   │   ├── Sidebar.tsx
+│   │   ├── Toast.tsx
+│   │   ├── AutoHideScroll.tsx
+│   │   ├── ErrorBoundary.tsx
+│   │   ├── LayoutWrapper.tsx
+│   │   ├── SettingsView.tsx
+│   │   └── ...
+│   ├── modules/             # 清理模块组件
+│   │   ├── Dashboard.tsx
+│   │   ├── BrewList.tsx
+│   │   ├── DockerList.tsx
+│   │   ├── NpmList.tsx
+│   │   ├── CondaList.tsx
+│   │   ├── SystemCacheList.tsx
+│   │   ├── CliToolsList.tsx
+│   │   └── DownloadsList.tsx
+│   ├── features/            # 卸载模块组件
+│   │   ├── UninstallAppsList.tsx
+│   │   ├── UninstallCliList.tsx
+│   │   ├── ResidualCleanerList.tsx
+│   │   └── AiAnalyzer.tsx
+│   ├── hooks/               # 自定义 hooks
+│   │   └── useKeyboardShortcuts.ts
+│   ├── store/               # Zustand 状态
+│   │   └── index.ts
+│   └── lib/                 # 工具函数
+│       ├── ipc.ts
+│       ├── format.ts
+│       └── ...
+├── resources/
+│   ├── icon.icns
+│   └── extension_icon.png
+── electron-builder.json
+├── vite.config.ts
+└── tailwind.config.js
+```
