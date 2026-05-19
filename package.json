@@ -1,6 +1,6 @@
 {
   "name": "maccleaner",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "macOS 磁盘清理工具",
   "type": "module",
   "main": "dist-electron/main.cjs",
