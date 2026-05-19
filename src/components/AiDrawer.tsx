@@ -8,6 +8,7 @@ interface AiDrawerProps {
   dirPath: string;
   dirName?: string;
   dirSize?: number;
+  onClose: () => void;
 }
 
 const STORAGE_KEY = 'maccleaner-settings';
@@ -48,7 +49,7 @@ const riskLabels: Record<string, string> = {
   high: '高风险',
 };
 
-export default function AiDrawer({ dirPath, dirName, dirSize }: AiDrawerProps) {
+export default function AiDrawer({ dirPath, dirName, dirSize, onClose }: AiDrawerProps) {
   const [result, setResult] = useState<AiAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,8 +69,18 @@ export default function AiDrawer({ dirPath, dirName, dirSize }: AiDrawerProps) {
   }, [dirPath, config]);
 
   return (
-    <div className="absolute inset-y-0 right-0 z-30 flex w-96 max-w-[50%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
+    <div className="absolute top-0 right-0 bottom-[60px] z-30 flex w-96 max-w-[50%] flex-col border-l border-macos-separator bg-macos-content-light shadow-xl"
          style={{ backdropFilter: 'blur(20px)' }}>
+      {/* 关闭按钮 */}
+      <button
+        type="button"
+        onClick={() => onClose()}
+        className="absolute right-3 top-3 z-50 flex h-8 w-8 items-center justify-center rounded-lg text-macos-text-tertiary hover:bg-macos-surface-hover transition-colors cursor-pointer"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
 
       {/* Header — 两行结构，与详情页标题栏高度一致 */}
       <div className="shrink-0 border-b border-macos-separator px-4 py-3">
