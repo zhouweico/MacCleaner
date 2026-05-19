@@ -15,6 +15,7 @@ import { autoUpdater } from 'electron-updater';
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.allowPrerelease = true;
+autoUpdater.autoCheckForUpdates = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
