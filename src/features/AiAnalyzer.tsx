@@ -11,21 +11,19 @@ interface AiAnalyzerProps {
 
 const STORAGE_KEY = 'maccleaner-settings';
 
-function loadProviderConfig(): AiProviderConfig {
+function loadProviderConfig(): { enabled: boolean } & AiProviderConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { type: 'ollama' };
+    if (!raw) return { type: 'ollama', enabled: false };
     const s = JSON.parse(raw);
-    switch (s.aiProvider) {
-      case 'openai':
-        return { type: 'openai', url: s.openaiUrl, model: s.openaiModel, apiKey: s.openaiApiKey };
-      case 'anthropic':
-        return { type: 'anthropic', model: s.anthropicModel, apiKey: s.anthropicApiKey };
-      default:
-        return { type: 'ollama', url: s.ollamaUrl || 'http://localhost:11434', model: s.ollamaModel || 'llama3.2' };
-    }
+    const base = s.aiProvider === 'openai'
+      ? { type: 'openai' as const, url: s.openaiUrl, model: s.openaiModel, apiKey: s.openaiApiKey }
+      : s.aiProvider === 'anthropic'
+        ? { type: 'anthropic' as const, model: s.anthropicModel, apiKey: s.anthropicApiKey }
+        : { type: 'ollama' as const, url: s.ollamaUrl || 'http://localhost:11434', model: s.ollamaModel || 'llama3.2' };
+    return { ...base, enabled: !!s.aiEnabled };
   } catch {
-    return { type: 'ollama' };
+    return { type: 'ollama', enabled: false };
   }
 }
 
@@ -53,12 +51,12 @@ function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
   const [result, setResult] = useState<AiAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const config = loadProviderConfig();
 
   const handleAnalyze = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const config = loadProviderConfig();
       const res = await aiAnalyze(dirPath, config);
       setResult(res);
     } catch (e) {
@@ -66,7 +64,9 @@ function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
     } finally {
       setLoading(false);
     }
-  }, [dirPath]);
+  }, [dirPath, config]);
+
+  if (!config.enabled) return null;
 
   return (
     <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
@@ -112,7 +112,7 @@ function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
 
       {!result && !loading && !error && (
         <p className="text-xs text-macos-text-tertiary">
-          使用 AI 模型分析未知目录用途
+          使用 {config.type === 'ollama' ? 'Ollama' : config.type === 'anthropic' ? 'Claude' : 'AI'} 模型分析未知目录用途
         </p>
       )}
     </div>

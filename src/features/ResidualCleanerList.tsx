@@ -6,6 +6,7 @@ import { useRescanListener } from '@/hooks/useKeyboardShortcuts';
 import type { AppInfo, CleanAction } from '@/types';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
+import AiAnalyzer from '@/features/AiAnalyzer';
 
 function ResidualCleanerList() {
   const { residuals, setResiduals, selectedItem, setSelectedItem, isSelected, clearSelection, toggleSelection, searchTargetPath } = useAppStore();
@@ -169,6 +170,7 @@ export function ResidualCleanerDetail() {
             </div>
           ))}
         </div>
+        {residual.path && <AiAnalyzer dirPath={residual.path} dirName={residual.name} dirSize={residual.size} />}
       </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">

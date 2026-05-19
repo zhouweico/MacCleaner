@@ -7,6 +7,7 @@ import type { ScanItem, CleanAction } from '@/types';
 import CollapsibleFileSection from '@/components/CollapsibleFileSection';
 import SelectionSummary from '@/components/SelectionSummary';
 import AutoHideScroll from '@/components/AutoHideScroll';
+import AiAnalyzer from '@/features/AiAnalyzer';
 
 function SystemCacheList() {
   const { scanResults, setScanning, setScanResults, selectedItem, setSelectedItem, isSelected, toggleSelection, searchTargetPath } = useAppStore();
@@ -165,6 +166,7 @@ export function SystemCacheDetail() {
             <div className="flex justify-between"><span className="text-macos-text-secondary">安全清理</span><span className={item.safeToRemove ? 'text-green-400' : 'text-orange-400'}>{item.safeToRemove ? '是' : '否'}</span></div>
           </div>
         )}
+        <AiAnalyzer dirPath={item.path} dirName={item.name} dirSize={item.size} />
       </AutoHideScroll>
       <div className="border-t border-macos-separator px-4 py-3 bg-macos-content-light flex items-center justify-between text-xs">
         <div className="flex items-center gap-4">
