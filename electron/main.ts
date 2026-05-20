@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { registerScanHandlers } from './ipc/scan';
@@ -7,14 +7,11 @@ import { registerUninstallHandlers } from './ipc/uninstall';
 import { registerScheduleHandlers } from './ipc/schedule';
 import { restoreSchedule } from './services/scheduler';
 import { registerAiHandlers } from './ipc/ai';
-import { readFileSync, unlinkSync } from 'fs';
+import { readFileSync, unlinkSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { tmpdir } from 'os';
+import log from 'electron-log';
 import { autoUpdater } from 'electron-updater';
-
-autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = true;
-autoUpdater.allowPrerelease = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
@@ -24,6 +21,51 @@ app.setName('MacCleaner');
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let panelWindow: BrowserWindow | null = null;
+
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.autoDownload = false;
+
+autoUpdater.on('checking-for-update', () => {
+  log.info('Checking for update...');
+  mainWindow?.webContents.send('update:checking');
+});
+
+autoUpdater.on('update-available', (info) => {
+  log.info('Update available:', info.version);
+  mainWindow?.webContents.send('update:available', {
+    version: info.version,
+    releaseNotes: info.releaseNotes
+  });
+});
+
+autoUpdater.on('update-not-available', () => {
+  log.info('Update not available');
+  mainWindow?.webContents.send('update:not-available');
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  mainWindow?.webContents.send('update:progress', {
+    percent: progress.percent,
+    bytesPerSecond: progress.bytesPerSecond,
+    transferred: progress.transferred,
+    total: progress.total
+  });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  log.info('Update downloaded:', info.version);
+  mainWindow?.webContents.send('update:downloaded', {
+    version: info.version
+  });
+});
+
+autoUpdater.on('error', (error) => {
+  log.error('Update error:', error.message);
+  mainWindow?.webContents.send('update:error', {
+    message: error.message
+  });
+});
 
 async function showAboutPanel() {
   const aboutWin = new BrowserWindow({
@@ -166,7 +208,6 @@ function createWindow() {
   });
 
   const isDev = process.env.NODE_ENV === 'development';
-
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
@@ -174,21 +215,17 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../dist/index.html'));
   }
 
-  // Intercept Cmd+R: check renderer switch. If disabled, block refresh (no-op). If enabled, let it reload.
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    // Cmd+, — open Settings (macOS standard)
     if (input.key === ',' && input.meta) {
       event.preventDefault();
       mainWindow?.webContents.executeJavaScript("window.__navigateToModule?.('settings')");
       return;
     }
-    // Cmd+W — hide window (macOS standard, non-destructive)
     if (input.key.toLowerCase() === 'w' && input.meta && !input.shift) {
       event.preventDefault();
       mainWindow?.hide();
       return;
     }
-    // Cmd+R — reload (respect settings toggle)
     if (input.key.toLowerCase() === 'r' && input.meta && !input.shift) {
       event.preventDefault();
       mainWindow?.webContents.executeJavaScript(`
@@ -245,11 +282,6 @@ function createAppMenu() {
 }
 
 app.whenReady().then(() => {
-  autoUpdater.requestHeaders = {
-    'User-Agent': `MacCleaner/${packageJson.version} (Electron/${process.versions.electron})`,
-    'Accept': 'application/vnd.github.v3+json',
-  };
-
   createAppMenu();
   createTray();
   createWindow();
@@ -294,77 +326,36 @@ app.whenReady().then(() => {
     node: process.versions.node,
   }));
 
-  // Auto-update handlers
   ipcMain.handle('update:check', async () => {
     try {
-      await autoUpdater.checkForUpdates();
-      return { success: true };
-    } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : '检查更新失败' };
+      const result = await autoUpdater.checkForUpdates();
+      return { success: true, updateInfo: result?.updateInfo };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : '检查更新失败' };
     }
   });
 
   ipcMain.handle('update:download', async () => {
-    autoUpdater.downloadUpdate();
-    return { success: true };
+    try {
+      await autoUpdater.downloadUpdate();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : '下载失败' };
+    }
   });
 
   ipcMain.handle('update:install', () => {
     autoUpdater.quitAndInstall();
+    return { success: true };
   });
 
   ipcMain.handle('shell:open-external', (_e, url: string) => {
     shell.openExternal(url);
   });
 
-  // Auto-check for updates on startup
-  autoUpdater.checkForUpdatesAndNotify();
-});
-
-// Auto-update events
-autoUpdater.on('update-available', (info) => {
-  dialog.showMessageBox(mainWindow!, {
-    type: 'info',
-    title: '发现新版本',
-    message: `MacCleaner ${info.version} 已发布`,
-    detail: '是否立即下载并安装？',
-    buttons: ['下载', '取消'],
-    cancelId: 1,
-  }).then(({ response }) => {
-    if (response === 0) {
-      autoUpdater.downloadUpdate();
-    }
-  });
-});
-
-autoUpdater.on('update-not-available', () => {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send('toast:show', { message: '当前已是最新版本', type: 'success' });
-});
-
-autoUpdater.on('download-progress', (progress) => {
-  mainWindow?.webContents.send('update:progress', {
-    percent: Math.round(progress.percent),
-  });
-});
-
-autoUpdater.on('update-downloaded', (info) => {
-  dialog.showMessageBox(mainWindow!, {
-    type: 'info',
-    title: '下载完成',
-    message: `新版本 ${info.version} 已下载完成`,
-    detail: '是否立即安装并重启？',
-    buttons: ['安装并重启', '稍后'],
-    cancelId: 1,
-  }).then(({ response }) => {
-    if (response === 0) {
-      autoUpdater.quitAndInstall();
-    }
-  });
-});
-
-autoUpdater.on('error', (err) => {
-  console.error('Auto update error:', err);
+  if (process.env.NODE_ENV !== 'development') {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
 });
 
 app.on('before-quit', () => {
@@ -378,6 +369,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
+  if (!app.isReady()) return;
   if (mainWindow === null) {
     createWindow();
   } else {

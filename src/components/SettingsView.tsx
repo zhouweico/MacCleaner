@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { registerSchedule, getOperationLogs, clearOperationLogs, checkForUpdates, getAppInfo, openExternal, testAiConnection } from '@/lib/ipc';
+import { registerSchedule, getOperationLogs, clearOperationLogs, checkForUpdates, downloadUpdate, installUpdate, getAppInfo, openExternal, testAiConnection, onUpdateProgress, onUpdateAvailable, onUpdateNotAvailable, onUpdateDownloaded, onUpdateError, onUpdateChecking } from '@/lib/ipc';
 import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import AutoHideScroll from '@/components/AutoHideScroll';
 import type { OperationLogEntry, AiProviderConfig } from '@/lib/ipc';
@@ -208,7 +208,10 @@ function SettingsView() {
   });
   const [logs, setLogs] = useState<OperationLogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [updateChecking, setUpdateChecking] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'>('idle');
+  const [updateVersion, setUpdateVersion] = useState('');
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [updateError, setUpdateError] = useState('');
   const [appVersion, setAppVersion] = useState<string>('');
 
   useEffect(() => {
@@ -231,6 +234,41 @@ function SettingsView() {
     setShortcutEnabled(s.shortcutEnabled ?? { selectAll: true, rescan: true });
     loadLogs();
     getAppInfo().then(info => setAppVersion(info.version));
+
+    // Listen for update events from main process
+    const unsubChecking = onUpdateChecking(() => {
+      setUpdateStatus('checking');
+      setUpdateError('');
+    });
+    const unsubAvailable = onUpdateAvailable((data) => {
+      setUpdateStatus('available');
+      setUpdateVersion(data.version);
+    });
+    const unsubNotAvailable = onUpdateNotAvailable(() => {
+      setUpdateStatus('idle');
+    });
+    const unsubProgress = onUpdateProgress((data) => {
+      setUpdateStatus('downloading');
+      setUpdateProgress(data.percent);
+    });
+    const unsubDownloaded = onUpdateDownloaded((data) => {
+      setUpdateStatus('downloaded');
+      setUpdateVersion(data.version);
+      setUpdateProgress(100);
+    });
+    const unsubError = onUpdateError((data) => {
+      setUpdateStatus('error');
+      setUpdateError(data.message);
+    });
+
+    return () => {
+      unsubChecking();
+      unsubAvailable();
+      unsubNotAvailable();
+      unsubProgress();
+      unsubDownloaded();
+      unsubError();
+    };
   }, []);
 
   function handleScheduleChange(enabled: boolean) {
@@ -643,28 +681,89 @@ function SettingsView() {
           <h2 className="text-xs font-semibold text-macos-text-secondary uppercase tracking-wide">关于</h2>
         </div>
         <div className="px-4">
-          {/* Current version + check update */}
+          {/* Current version + update button */}
           <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
             <div className="text-sm font-medium">
               {appVersion ? `版本号 ${appVersion}` : '检查更新'}
             </div>
-            <button
-              onClick={async () => {
-                setUpdateChecking(true);
-                try {
-                  const res = await checkForUpdates();
-                  if (!res.success) {
-                    alert(`检查失败: ${res.error}`);
-                  }
-                } finally {
-                  setUpdateChecking(false);
-                }
-              }}
-              disabled={updateChecking}
-              className="shrink-0 rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface disabled:opacity-40 transition-colors"
-            >
-              {updateChecking ? '检查中...' : '检查并更新'}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {updateStatus === 'idle' && (
+                <button
+                  onClick={async () => {
+                    setUpdateError('');
+                    const res = await checkForUpdates();
+                    if (!res.success) {
+                      setUpdateStatus('error');
+                      setUpdateError(res.error ?? '检查更新失败');
+                    }
+                  }}
+                  className="rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface transition-colors"
+                >
+                  检查并更新
+                </button>
+              )}
+              {updateStatus === 'checking' && (
+                <span className="text-xs text-macos-text-tertiary px-3 py-1.5">检查中...</span>
+              )}
+              {updateStatus === 'available' && (
+                <>
+                  <span className="text-xs text-macos-text-tertiary">发现 {updateVersion}</span>
+                  <button
+                    onClick={() => {
+                      setUpdateStatus('downloading');
+                      setUpdateProgress(0);
+                      downloadUpdate();
+                    }}
+                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition-colors"
+                  >
+                    下载
+                  </button>
+                </>
+              )}
+              {updateStatus === 'downloading' && (
+                <div className="flex items-center gap-2 py-1.5">
+                  <div className="w-20 h-1.5 rounded-full bg-macos-surface-hover overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-[width] duration-300"
+                      style={{ width: `${updateProgress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-macos-text-tertiary w-8">{updateProgress}%</span>
+                </div>
+              )}
+              {updateStatus === 'downloaded' && (
+                <button
+                  onClick={async () => {
+                    const res = await installUpdate();
+                    if (!res.success) {
+                      setUpdateStatus('error');
+                      setUpdateError(res.error ?? '安装失败');
+                    }
+                  }}
+                  className="rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 transition-colors"
+                >
+                  安装并重启
+                </button>
+              )}
+              {updateStatus === 'error' && (
+                <>
+                  <span className="text-xs text-red-400">{updateError}</span>
+                  <button
+                    onClick={async () => {
+                      setUpdateError('');
+                      const res = await checkForUpdates();
+                      if (!res.success) {
+                        setUpdateStatus('error');
+                        setUpdateError(res.error ?? '检查更新失败');
+                      }
+                    }}
+                    className="rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface transition-colors"
+                  >
+                    重试
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           {/* Update log */}
           <div className="flex items-center justify-between py-2.5">

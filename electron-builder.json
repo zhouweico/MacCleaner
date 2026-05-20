@@ -9,9 +9,19 @@
     "dist-electron/**/*",
     "resources/**/*"
   ],
+  "artifactName": "${productName}-v${version}-darwin-${arch}.${ext}",
   "mac": {
     "category": "public.app-category.utilities",
-    "target": ["dmg", "zip"],
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64"]
+      }
+    ],
     "icon": "resources/icon.icns"
   },
   "dmg": {
@@ -29,7 +39,6 @@
   "publish": {
     "provider": "github",
     "owner": "zhouweico",
-    "repo": "MacCleaner",
-    "private": false
+    "repo": "MacCleaner"
   }
 }

@@ -135,12 +135,36 @@ export async function checkForUpdates(): Promise<{ success: boolean; error?: str
   return window.electronAPI.ipc.invoke('update:check') as Promise<{ success: boolean; error?: string }>;
 }
 
-export async function downloadUpdate(): Promise<{ success: boolean }> {
-  return window.electronAPI.ipc.invoke('update:download') as Promise<{ success: boolean }>;
+export async function downloadUpdate(): Promise<{ success: boolean; error?: string }> {
+  return window.electronAPI.ipc.invoke('update:download') as Promise<{ success: boolean; error?: string }>;
 }
 
-export function onUpdateProgress(callback: (data: { percent: number }) => void): () => void {
-  return window.electronAPI.ipc.on('update:progress', (data) => callback(data as { percent: number }));
+export function onUpdateChecking(callback: () => void): () => void {
+  return window.electronAPI.ipc.on('update:checking', () => callback());
+}
+
+export function onUpdateProgress(callback: (data: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void): () => void {
+  return window.electronAPI.ipc.on('update:progress', (data) => callback(data as { percent: number; bytesPerSecond: number; transferred: number; total: number }));
+}
+
+export function onUpdateAvailable(callback: (data: { version: string }) => void): () => void {
+  return window.electronAPI.ipc.on('update:available', (data) => callback(data as { version: string }));
+}
+
+export function onUpdateNotAvailable(callback: () => void): () => void {
+  return window.electronAPI.ipc.on('update:not-available', () => callback());
+}
+
+export function onUpdateDownloaded(callback: (data: { version: string }) => void): () => void {
+  return window.electronAPI.ipc.on('update:downloaded', (data) => callback(data as { version: string }));
+}
+
+export function onUpdateError(callback: (data: { message: string }) => void): () => void {
+  return window.electronAPI.ipc.on('update:error', (data) => callback(data as { message: string }));
+}
+
+export async function installUpdate(): Promise<{ success: boolean; error?: string }> {
+  return window.electronAPI.ipc.invoke('update:install') as Promise<{ success: boolean; error?: string }>;
 }
 
 export function openExternal(url: string) {
