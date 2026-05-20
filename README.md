@@ -44,7 +44,24 @@ macOS 深度磁盘清理与 APP 卸载工具。覆盖包管理器缓存、开发
 ### 系统要求
 
 - macOS 12+（Monterey 及以上）
+- Apple Silicon (M1/M2/M3) 或 Intel 处理器
 - 首次运行需在 **系统设置 → 隐私与安全性 → 完全磁盘访问权限** 中授予权限
+
+### 下载安装
+
+访问 [Releases 页面](https://github.com/zhouweico/MacCleaner/releases) 下载最新版本。
+
+根据你的 Mac 架构选择对应的安装包：
+
+| 架构 | 适用设备 | 推荐下载 |
+|------|---------|---------|
+| `darwin-universal` | 所有 Mac | ⭐ 推荐，一包通用 |
+| `darwin-x64` | Intel Mac | Intel 用户下载 |
+| `darwin-arm64` | Apple Silicon Mac | Apple Silicon 用户下载 |
+
+**安装包说明**：
+- `.dmg`：磁盘镜像格式，安装时需要手动拖拽到 Applications
+- `.zip`：压缩包格式，解压后双击运行（**自动更新功能需要 .dmg 安装**）
 
 ## 🛠️ 开发
 
@@ -77,28 +94,32 @@ npm run build:mac
 
 | 文件 | 说明 |
 |------|------|
-| `MacCleaner-{version}.dmg` | 安装镜像 |
-| `MacCleaner-{version}-mac.zip` | 自动更新包（Squirrel.Mac） |
-| `latest-mac.yml` | 版本元数据 |
+| `MacCleaner-v{version}-darwin-x64.dmg/.zip` | Intel Mac 安装包 |
+| `MacCleaner-v{version}-darwin-arm64.dmg/.zip` | Apple Silicon 安装包 |
+| `MacCleaner-v{version}-darwin-universal.dmg/.zip` | 通用安装包（Intel + Apple Silicon） |
+| `latest-mac.yml` | 版本元数据（自动更新用） |
+
+**注意**：arm64/universal 构建需要下载额外的 Electron 二进制包，建议在网络良好的环境下执行。
 
 ### 发布
 
 ```bash
 # 1. 更新 package.json 中的 version
-# 2. 提交代码
+# 2. 提交代码并推送
 git add . && git commit -m "chore: 升级版本至 x.y.z"
+git push origin master
 
-# 3. 打标签并推送
-git tag vx.y.z && git push origin vx.y.z
+# 3. 构建安装包（需要网络良好）
+npm run build:mac -- --publish never
 
-# 4. 构建并创建 Release
-npm run build:mac
+# 4. 使用 gh cli 创建 Release 并上传安装包
 gh release create vx.y.z \
-  out/MacCleaner-{version}.dmg \
-  out/MacCleaner-{version}-mac.zip \
-  out/latest-mac.yml \
   --title "MacCleaner vx.y.z" \
-  --notes "发布说明"
+  --notes "发布说明" \
+  out/MacCleaner-vx.y.z-darwin-universal.dmg \
+  out/MacCleaner-vx.y.z-darwin-x64.dmg \
+  out/MacCleaner-vx.y.z-darwin-arm64.dmg \
+  out/latest-mac.yml
 ```
 
 ##  项目结构
