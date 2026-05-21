@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { aiAnalyze } from '@/lib/ipc';
 import type { AiAnalysisResult, AiProviderConfig } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { toast } from '@/components/Toast';
 
 interface AiAnalyzerProps {
   dirPath: string;
@@ -50,17 +51,15 @@ const riskLabels: Record<string, string> = {
 function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
   const [result, setResult] = useState<AiAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const config = loadProviderConfig();
 
   const handleAnalyze = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await aiAnalyze(dirPath, config);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '分析失败');
+      toast.error(e instanceof Error ? e.message : 'AI 分析失败');
     } finally {
       setLoading(false);
     }
@@ -87,10 +86,6 @@ function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
         </p>
       )}
 
-      {error && (
-        <p className="text-xs text-macos-red">{error}</p>
-      )}
-
       {result && (
         <div className="space-y-2 mt-2">
           <div className="flex items-center gap-2">
@@ -110,7 +105,7 @@ function AiAnalyzer({ dirPath, dirName, dirSize }: AiAnalyzerProps) {
         </div>
       )}
 
-      {!result && !loading && !error && (
+      {!result && !loading && (
         <p className="text-xs text-macos-text-tertiary">
           使用 {config.type === 'ollama' ? 'Ollama' : config.type === 'anthropic' ? 'Claude' : 'AI'} 模型分析未知目录用途
         </p>

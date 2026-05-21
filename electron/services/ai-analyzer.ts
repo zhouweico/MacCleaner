@@ -196,8 +196,16 @@ async function callOllama(url: string, prompt: string, model: string): Promise<s
     throw new Error('无法连接到 Ollama 服务');
   }
 
-  const data = JSON.parse(stdout);
-  return data.response ?? '';
+  if (!stdout || !stdout.trim()) {
+    throw new Error('Ollama 返回空响应');
+  }
+
+  try {
+    const data = JSON.parse(stdout);
+    return data.response ?? '';
+  } catch {
+    throw new Error(`Ollama 返回无效响应: ${stdout.slice(0, 200)}`);
+  }
 }
 
 // ─── OpenAI-compatible Adapter ───

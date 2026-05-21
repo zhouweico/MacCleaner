@@ -7,7 +7,7 @@ import { registerUninstallHandlers } from './ipc/uninstall';
 import { registerScheduleHandlers } from './ipc/schedule';
 import { restoreSchedule } from './services/scheduler';
 import { registerAiHandlers } from './ipc/ai';
-import { readFileSync, unlinkSync, existsSync, mkdirSync, appendFileSync } from 'fs';
+import { readFileSync, unlinkSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { tmpdir } from 'os';
 import log from 'electron-log';
@@ -23,7 +23,7 @@ let tray: Tray | null = null;
 let panelWindow: BrowserWindow | null = null;
 
 autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
+(log as any).transports.file.level = 'info';
 autoUpdater.autoDownload = false;
 
 autoUpdater.on('checking-for-update', () => {
@@ -328,10 +328,21 @@ app.whenReady().then(() => {
 
   ipcMain.handle('update:check', async () => {
     try {
+      if (!app.isPackaged) {
+        const message = '开发环境不支持自动更新，请构建生产版本后测试';
+        mainWindow?.webContents.send('update:error', { message });
+        return { success: false, error: message };
+      }
       const result = await autoUpdater.checkForUpdates();
-      return { success: true, updateInfo: result?.updateInfo };
+      // updateInfo 可能为 null（无可用更新时），此时 update-not-available 事件已由 electron-updater 触发
+      if (!result?.updateInfo) {
+        return { success: true, updateInfo: null };
+      }
+      return { success: true, updateInfo: result.updateInfo };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : '检查更新失败' };
+      const message = error instanceof Error ? error.message : '检查更新失败';
+      mainWindow?.webContents.send('update:error', { message });
+      return { success: false, error: message };
     }
   });
 
@@ -340,7 +351,9 @@ app.whenReady().then(() => {
       await autoUpdater.downloadUpdate();
       return { success: true };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : '下载失败' };
+      const message = error instanceof Error ? error.message : '下载失败';
+      mainWindow?.webContents.send('update:error', { message });
+      return { success: false, error: message };
     }
   });
 

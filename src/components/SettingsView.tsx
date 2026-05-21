@@ -4,6 +4,7 @@ import { DEFAULT_SHORTCUTS } from '@/hooks/useKeyboardShortcuts';
 import AutoHideScroll from '@/components/AutoHideScroll';
 import type { OperationLogEntry, AiProviderConfig } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { toast } from '@/components/Toast';
 
 const STORAGE_KEY = 'maccleaner-settings';
 
@@ -178,6 +179,30 @@ function CompactSelect({ value, options, onChange, width }: {
   );
 }
 
+/** Format raw update error into a user-friendly message */
+function formatUpdateError(error: string): string {
+  // ENOENT: missing app-update.yml (dev mode)
+  if (error.includes('app-update.yml') || (error.includes('ENOENT') && error.includes('no such file'))) {
+    return '开发环境不支持自动更新（缺少 app-update.yml），请通过构建生产版本测试更新功能。';
+  }
+  // ENOENT: general file not found
+  if (error.includes('ENOENT') || error.includes('no such file')) {
+    const match = error.match(/ENOENT[^']*'([^']+)'/);
+    const filePath = match?.[1] ?? '';
+    return `文件不存在：${filePath}`;
+  }
+  // Network errors - strip verbose details
+  if (error.includes('net::ERR_')) {
+    const match = error.match(/net::(ERR_[A-Z_]+)/);
+    return `网络错误：${match?.[1]?.replace('ERR_', '').replace(/_/g, ' ').toLowerCase()}`;
+  }
+  // Generic: truncate overly long messages
+  if (error.length > 200) {
+    return error.slice(0, 200) + '...';
+  }
+  return error;
+}
+
 function SettingsView() {
   const [scanTime, setScanTime] = useState(() => {
     const t = loadSettings().scanTime;
@@ -198,9 +223,7 @@ function SettingsView() {
   const [anthropicApiKey, setAnthropicApiKey] = useState(() => loadSettings().anthropicApiKey);
   const [anthropicModel, setAnthropicModel] = useState(() => loadSettings().anthropicModel);
   const [ollamaTestStatus, setOllamaTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
-  const [ollamaTestError, setOllamaTestError] = useState<string>('');
   const [cloudTestStatus, setCloudTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
-  const [cloudTestError, setCloudTestError] = useState<string>('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [shortcutEnabled, setShortcutEnabled] = useState<Record<string, boolean>>(() => {
     const s = loadSettings();
@@ -208,10 +231,9 @@ function SettingsView() {
   });
   const [logs, setLogs] = useState<OperationLogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'>('idle');
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'latest'>('idle');
   const [updateVersion, setUpdateVersion] = useState('');
   const [updateProgress, setUpdateProgress] = useState(0);
-  const [updateError, setUpdateError] = useState('');
   const [appVersion, setAppVersion] = useState<string>('');
 
   useEffect(() => {
@@ -238,14 +260,14 @@ function SettingsView() {
     // Listen for update events from main process
     const unsubChecking = onUpdateChecking(() => {
       setUpdateStatus('checking');
-      setUpdateError('');
     });
     const unsubAvailable = onUpdateAvailable((data) => {
       setUpdateStatus('available');
       setUpdateVersion(data.version);
     });
     const unsubNotAvailable = onUpdateNotAvailable(() => {
-      setUpdateStatus('idle');
+      setUpdateStatus('latest');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
     });
     const unsubProgress = onUpdateProgress((data) => {
       setUpdateStatus('downloading');
@@ -255,10 +277,11 @@ function SettingsView() {
       setUpdateStatus('downloaded');
       setUpdateVersion(data.version);
       setUpdateProgress(100);
+      toast.success('更新已下载，准备安装');
     });
     const unsubError = onUpdateError((data) => {
       setUpdateStatus('error');
-      setUpdateError(data.message);
+      toast.error(formatUpdateError(data.message));
     });
 
     return () => {
@@ -297,9 +320,7 @@ function SettingsView() {
   function handleAiChange(enabled: boolean) {
     setAiEnabled(enabled);
     setOllamaTestStatus('idle');
-    setOllamaTestError('');
     setCloudTestStatus('idle');
-    setCloudTestError('');
     const current = loadSettings();
     saveSettings({ ...current, aiEnabled: enabled });
     window.dispatchEvent(new Event('settings-changed'));
@@ -308,9 +329,7 @@ function SettingsView() {
   function handleAiProviderChange(provider: 'ollama' | 'openai' | 'anthropic') {
     setAiProvider(provider);
     setOllamaTestStatus('idle');
-    setOllamaTestError('');
     setCloudTestStatus('idle');
-    setCloudTestError('');
     const current = loadSettings();
     saveSettings({ ...current, aiProvider: provider });
     window.dispatchEvent(new Event('settings-changed'));
@@ -324,17 +343,21 @@ function SettingsView() {
 
   async function testConnection() {
     const config = getProviderConfig();
+    const label = config.type === 'openai' ? 'OpenAI' : 'Anthropic';
     setCloudTestStatus('testing');
-    setCloudTestError('');
     try {
       const res = await testAiConnection(config);
       setCloudTestStatus(res.success ? 'ok' : 'fail');
-      setCloudTestError(res.error ?? '');
+      if (res.success) {
+        toast.success(`${label} 连接成功`);
+      } else {
+        toast.error(res.error ?? `${label} 连接失败`);
+      }
     } catch (e) {
       setCloudTestStatus('fail');
-      setCloudTestError(e instanceof Error ? e.message : '未知错误');
+      toast.error(e instanceof Error ? e.message : `${label} 连接失败`);
     }
-    setTimeout(() => { setCloudTestStatus('idle'); setCloudTestError(''); }, 5000);
+    setTimeout(() => setCloudTestStatus('idle'), 5000);
   }
 
   function getProviderConfig(): AiProviderConfig {
@@ -375,16 +398,19 @@ function SettingsView() {
 
   async function testOllamaConnection() {
     setOllamaTestStatus('testing');
-    setOllamaTestError('');
     try {
       const res = await testAiConnection({ type: 'ollama', url: ollamaUrl, model: ollamaModel });
       setOllamaTestStatus(res.success ? 'ok' : 'fail');
-      setOllamaTestError(res.error ?? '');
+      if (res.success) {
+        toast.success('Ollama 连接成功');
+      } else {
+        toast.error(res.error ?? 'Ollama 连接失败');
+      }
     } catch (e) {
       setOllamaTestStatus('fail');
-      setOllamaTestError(e instanceof Error ? e.message : '未知错误');
+      toast.error(e instanceof Error ? e.message : 'Ollama 连接失败');
     }
-    setTimeout(() => { setOllamaTestStatus('idle'); setOllamaTestError(''); }, 5000);
+    setTimeout(() => setOllamaTestStatus('idle'), 5000);
   }
 
   return (
@@ -507,9 +533,6 @@ function SettingsView() {
                     </div>
                   </div>
                   <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，不会产生后台费用</p>
-                  {ollamaTestError && (
-                    <p className="text-xs text-macos-red mt-1">{ollamaTestError}</p>
-                  )}
                 </div>
               )}
 
@@ -575,9 +598,6 @@ function SettingsView() {
                     </div>
                   </div>
                   <p className="text-xs text-macos-text-tertiary mt-1.5">支持 OpenAI、DeepSeek、Groq、Together 等兼容协议</p>
-                  {cloudTestError && (
-                    <p className="text-xs text-macos-red mt-1">{cloudTestError}</p>
-                  )}
                 </div>
               )}
 
@@ -636,9 +656,6 @@ function SettingsView() {
                     </div>
                   </div>
                   <p className="text-xs text-macos-text-tertiary mt-1.5">AI 仅在手动触发时调用，按 token 计费</p>
-                  {cloudTestError && (
-                    <p className="text-xs text-macos-red mt-1">{cloudTestError}</p>
-                  )}
                 </div>
               )}
             </>
@@ -682,87 +699,86 @@ function SettingsView() {
         </div>
         <div className="px-4">
           {/* Current version + update button */}
-          <div className="flex items-center justify-between py-2.5 border-b border-macos-separator">
-            <div className="text-sm font-medium">
-              {appVersion ? `版本号 ${appVersion}` : '检查更新'}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {updateStatus === 'idle' && (
-                <button
-                  onClick={async () => {
-                    setUpdateError('');
-                    const res = await checkForUpdates();
-                    if (!res.success) {
-                      setUpdateStatus('error');
-                      setUpdateError(res.error ?? '检查更新失败');
-                    }
-                  }}
-                  className="rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface transition-colors"
-                >
-                  检查并更新
-                </button>
-              )}
-              {updateStatus === 'checking' && (
-                <span className="text-xs text-macos-text-tertiary px-3 py-1.5">检查中...</span>
-              )}
-              {updateStatus === 'available' && (
-                <>
-                  <span className="text-xs text-macos-text-tertiary">发现 {updateVersion}</span>
-                  <button
-                    onClick={() => {
-                      setUpdateStatus('downloading');
-                      setUpdateProgress(0);
-                      downloadUpdate();
-                    }}
-                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition-colors"
-                  >
-                    下载
-                  </button>
-                </>
-              )}
-              {updateStatus === 'downloading' && (
-                <div className="flex items-center gap-2 py-1.5">
-                  <div className="w-20 h-1.5 rounded-full bg-macos-surface-hover overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-blue-500 transition-[width] duration-300"
-                      style={{ width: `${updateProgress}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-macos-text-tertiary w-8">{updateProgress}%</span>
-                </div>
-              )}
-              {updateStatus === 'downloaded' && (
-                <button
-                  onClick={async () => {
-                    const res = await installUpdate();
-                    if (!res.success) {
-                      setUpdateStatus('error');
-                      setUpdateError(res.error ?? '安装失败');
-                    }
-                  }}
-                  className="rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 transition-colors"
-                >
-                  安装并重启
-                </button>
-              )}
-              {updateStatus === 'error' && (
-                <>
-                  <span className="text-xs text-red-400">{updateError}</span>
+          <div className="py-2.5 border-b border-macos-separator">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium">
+                {appVersion ? `版本号 ${appVersion}` : '检查更新'}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {updateStatus === 'idle' && (
                   <button
                     onClick={async () => {
-                      setUpdateError('');
                       const res = await checkForUpdates();
                       if (!res.success) {
                         setUpdateStatus('error');
-                        setUpdateError(res.error ?? '检查更新失败');
+                        toast.error(formatUpdateError(res.error ?? '检查更新失败'));
+                      }
+                    }}
+                    className="rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface transition-colors"
+                  >
+                    检查并更新
+                  </button>
+                )}
+                {updateStatus === 'checking' && (
+                  <span className="text-xs text-macos-text-tertiary px-3 py-1.5">检查中...</span>
+                )}
+                {updateStatus === 'latest' && (
+                  <span className="text-xs bg-macos-green/20 text-macos-green px-3 py-1.5 rounded">✓ 已是最新版本</span>
+                )}
+                {updateStatus === 'available' && (
+                  <>
+                    <span className="text-xs text-macos-text-tertiary">发现 {updateVersion}</span>
+                    <button
+                      onClick={() => {
+                        setUpdateStatus('downloading');
+                        setUpdateProgress(0);
+                        downloadUpdate();
+                      }}
+                      className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition-colors"
+                    >
+                      下载
+                    </button>
+                  </>
+                )}
+                {updateStatus === 'downloading' && (
+                  <div className="flex items-center gap-2 py-1.5">
+                    <div className="w-20 h-1.5 rounded-full bg-macos-surface-hover overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-blue-500 transition-[width] duration-300"
+                        style={{ width: `${updateProgress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-macos-text-tertiary w-8">{updateProgress}%</span>
+                  </div>
+                )}
+                {updateStatus === 'downloaded' && (
+                  <button
+                    onClick={async () => {
+                      const res = await installUpdate();
+                      if (!res.success) {
+                        setUpdateStatus('error');
+                        toast.error(res.error ?? '安装失败');
+                      }
+                    }}
+                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition-colors"
+                  >
+                    安装并重启
+                  </button>
+                )}
+                {updateStatus === 'error' && (
+                  <button
+                    onClick={async () => {
+                      const res = await checkForUpdates();
+                      if (!res.success) {
+                        toast.error(formatUpdateError(res.error ?? '检查更新失败'));
                       }
                     }}
                     className="rounded-lg bg-macos-surface-hover px-3 py-1.5 text-xs font-medium text-macos-text-primary hover:bg-macos-surface transition-colors"
                   >
                     重试
                   </button>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
           {/* Update log */}

@@ -4,25 +4,19 @@
   "directories": {
     "output": "out"
   },
-  "files": [
-    "dist/**/*",
-    "dist-electron/**/*",
-    "resources/**/*"
-  ],
+  "files": ["dist/**/*", "dist-electron/**/*", "resources/**/*"],
   "artifactName": "${productName}-v${version}-darwin-${arch}.${ext}",
   "mac": {
     "category": "public.app-category.utilities",
     "target": [
       {
-        "target": "dmg",
-        "arch": ["x64", "arm64", "universal"]
-      },
-      {
         "target": "zip",
         "arch": ["x64", "arm64", "universal"]
       }
     ],
-    "icon": "resources/icon.icns"
+    "icon": "resources/icon.icns",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false
   },
   "dmg": {
     "title": "MacCleaner",
@@ -40,5 +34,6 @@
     "provider": "github",
     "owner": "zhouweico",
     "repo": "MacCleaner"
-  }
+  },
+  "asar": true
 }

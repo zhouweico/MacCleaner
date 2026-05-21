@@ -1,6 +1,6 @@
 {
   "name": "maccleaner",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "macOS 磁盘清理工具",
   "type": "module",
   "main": "dist-electron/main.cjs",
@@ -20,8 +20,8 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",
-    "electron": "^33.4.11",
-    "electron-builder": "^25.0.0",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.0",
     "electron-updater": "^6.8.3",
     "postcss": "^8.4.0",
     "react": "^19.0.0",

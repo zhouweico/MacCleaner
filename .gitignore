@@ -6,5 +6,6 @@ out
 .env
 .DS_Store
 .claude/
+.trae/
 .superpowers/
 data/

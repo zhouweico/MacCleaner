@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { scanAll, scanApps, scanResidual, scanCliToolsList } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { toast } from '@/components/Toast';
 import { navItems } from '@/store';
 
 interface DiskInfo {
@@ -13,7 +14,6 @@ interface DiskInfo {
 
 export default function TrayPanel() {
   const [diskInfo, setDiskInfo] = useState<DiskInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { scanResults, totalCleanable, isScanning, setScanResults, setApps, setResiduals, setCliTools, setScanning } = useAppStore();
 
@@ -36,7 +36,6 @@ export default function TrayPanel() {
   async function loadData() {
     setLoading(true);
     try {
-      setError(null);
       const [disk, results, apps, residuals, cliTools] = await Promise.all([
         window.electronAPI.ipc.invoke('disk:info'),
         scanAll(),
@@ -49,10 +48,9 @@ export default function TrayPanel() {
       setApps(apps);
       setResiduals(residuals);
       setCliTools(cliTools as { name: string; source: string; version: string; path: string; size?: number }[]);
-      // 通知主窗口也刷新数据
       window.electronAPI.ipc.invoke('panel:refresh');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '加载数据失败');
+      toast.error(e instanceof Error ? e.message : '加载数据失败');
     } finally {
       setLoading(false);
     }
@@ -66,7 +64,7 @@ export default function TrayPanel() {
       }
       await loadData();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '清理失败');
+      toast.error(e instanceof Error ? e.message : '清理失败');
     } finally {
       setScanning(false);
     }
@@ -138,12 +136,7 @@ export default function TrayPanel() {
 
       {/* 模块卡片 */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-1.5 pr-0.5">
-        {error && (
-          <div className="text-xs text-macos-red bg-macos-red/10 rounded-lg p-2 text-center">
-            {error}
-          </div>
-        )}
-        {!hasData && !isScanning && !error && (
+        {!hasData && !isScanning && !diskInfo && (
           <div className="text-xs text-macos-text-secondary text-center py-4">
             暂无数据，点击刷新
           </div>

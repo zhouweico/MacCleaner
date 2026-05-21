@@ -55,9 +55,10 @@ function App() {
 
     // Listen for toast notifications from main process
     const unsubToast = window.electronAPI.ipc.on('toast:show', (data: unknown) => {
-      const { message, type } = data as { message: string; type: 'success' | 'error' | 'info' };
+      const { message, type } = data as { message: string; type: 'success' | 'error' | 'warning' | 'info' };
       if (type === 'success') toast.success(message);
       else if (type === 'error') toast.error(message);
+      else if (type === 'warning') toast.warning(message);
       else toast.info(message);
     });
 

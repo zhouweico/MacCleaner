@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { aiAnalyze } from '@/lib/ipc';
 import type { AiAnalysisResult, AiProviderConfig } from '@/lib/ipc';
 import { formatBytes } from '@/lib/format';
+import { toast } from '@/components/Toast';
 import AutoHideScroll from './AutoHideScroll';
 
 interface AiDrawerProps {
@@ -51,17 +52,15 @@ const riskLabels: Record<string, string> = {
 export default function AiDrawer({ dirPath, dirName, dirSize }: AiDrawerProps) {
   const [result, setResult] = useState<AiAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const config = loadProviderConfig();
 
   const handleAnalyze = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await aiAnalyze(dirPath, config);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '分析失败');
+      toast.error(e instanceof Error ? e.message : 'AI 分析失败');
     } finally {
       setLoading(false);
     }
@@ -129,12 +128,6 @@ export default function AiDrawer({ dirPath, dirName, dirSize }: AiDrawerProps) {
             </button>
           </div>
 
-          {error && (
-            <div className="rounded-lg border border-macos-red/20 bg-macos-red/5 p-3 text-xs text-macos-red">
-              {error}
-            </div>
-          )}
-
           {result && (
             <div className="space-y-4">
               {/* Identity card */}
@@ -178,7 +171,7 @@ export default function AiDrawer({ dirPath, dirName, dirSize }: AiDrawerProps) {
             </div>
           )}
 
-          {!result && !loading && !error && (
+          {!result && !loading && (
             <div className="flex flex-col items-center justify-center py-12 text-macos-text-tertiary">
               <span className="text-4xl mb-3 opacity-40">
                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
