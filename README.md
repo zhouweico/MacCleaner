@@ -53,15 +53,15 @@ macOS 深度磁盘清理与 APP 卸载工具。覆盖包管理器缓存、开发
 
 根据你的 Mac 架构选择对应的安装包：
 
-| 架构 | 适用设备 | 推荐下载 |
-|------|---------|---------|
-| `darwin-universal` | 所有 Mac | ⭐ 推荐，一包通用 |
-| `darwin-x64` | Intel Mac | Intel 用户下载 |
-| `darwin-arm64` | Apple Silicon Mac | Apple Silicon 用户下载 |
+| 架构 | 适用设备 | 推荐 |
+|------|---------|------|
+| `darwin-universal.zip` | 所有 Mac | ⭐ 推荐，一包通用 |
+| `darwin-x64.zip` | Intel Mac | Intel 用户下载 |
+| `darwin-arm64.zip` | Apple Silicon Mac | Apple Silicon 用户下载 |
 
-**安装包说明**：
-- `.dmg`：磁盘镜像格式，安装时需要手动拖拽到 Applications
-- `.zip`：压缩包格式，解压后双击运行（**自动更新功能需要 .dmg 安装**）
+下载后解压 `.zip` 文件，将 `MacCleaner.app` 拖入 `/Applications` 即可运行。
+
+> 首次运行需在 **系统设置 → 隐私与安全性 → 完全磁盘访问权限** 中授予权限。
 
 ## 🛠️ 开发
 
@@ -94,9 +94,9 @@ npm run build:mac
 
 | 文件 | 说明 |
 |------|------|
-| `MacCleaner-v{version}-darwin-x64.dmg/.zip` | Intel Mac 安装包 |
-| `MacCleaner-v{version}-darwin-arm64.dmg/.zip` | Apple Silicon 安装包 |
-| `MacCleaner-v{version}-darwin-universal.dmg/.zip` | 通用安装包（Intel + Apple Silicon） |
+| `MacCleaner-v{version}-darwin-x64.zip` | Intel Mac 安装包 |
+| `MacCleaner-v{version}-darwin-arm64.zip` | Apple Silicon 安装包 |
+| `MacCleaner-v{version}-darwin-universal.zip` | 通用安装包（Intel + Apple Silicon） |
 | `latest-mac.yml` | 版本元数据（自动更新用） |
 
 **注意**：arm64/universal 构建需要下载额外的 Electron 二进制包，建议在网络良好的环境下执行。
@@ -116,9 +116,9 @@ npm run build:mac -- --publish never
 gh release create vx.y.z \
   --title "MacCleaner vx.y.z" \
   --notes "发布说明" \
-  out/MacCleaner-vx.y.z-darwin-universal.dmg \
-  out/MacCleaner-vx.y.z-darwin-x64.dmg \
-  out/MacCleaner-vx.y.z-darwin-arm64.dmg \
+  out/MacCleaner-vx.y.z-darwin-universal.zip \
+  out/MacCleaner-vx.y.z-darwin-x64.zip \
+  out/MacCleaner-vx.y.z-darwin-arm64.zip \
   out/latest-mac.yml
 ```
 
@@ -146,14 +146,14 @@ cleaner/
 
 | 技术 | 版本 |
 |------|------|
-| Electron | 33.x |
+| Electron | 39.x |
 | React | 19.x |
 | TypeScript | 5.6+ |
 | Vite | 6.x |
 | Tailwind CSS | 3.4+ |
 | Zustand | 5.x |
 | electron-updater | 6.8+ |
-| electron-builder | 25.x |
+| electron-builder | 26.x |
 
 **AI 模型**：Ollama（llama3.2 等）/ OpenAI（gpt-4o 等）/ Anthropic（claude-sonnet/haiku）
 
